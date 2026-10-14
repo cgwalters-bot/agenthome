@@ -1,0 +1,28 @@
+# Explicitly invoked by just install-tools; Linux x86_64 is the initial target.
+[[tools]]
+name = "ast-outline"
+command = "ast-outline"
+minimum_version = "1.9.0"
+version_args = ["--version"]
+method = "uv"
+package = "ast-outline==1.9.0"
+
+[[tools]]
+name = "ast-grep"
+command = "ast-grep"
+minimum_version = "0.50.0"
+version_args = ["--version"]
+method = "npm"
+package = "@ast-grep/cli"
+
+[[tools]]
+name = "uv"
+command = "uv"
+minimum_version = "0.13.1"
+version_args = ["--version"]
+method = "archive"
+dependency_only = true
+url = "https://github.com/astral-sh/uv/releases/download/0.13.1/uv-x86_64-unknown-linux-gnu.tar.gz"
+sha256 = "eadd9d27c134ab5ac1ffd4473b97a741407f3ea238288f03121fc4deddf90220"
+format = "tar.gz"
+member = "uv-x86_64-unknown-linux-gnu/uv"
