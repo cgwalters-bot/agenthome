@@ -28,12 +28,22 @@ Failures produce a nonzero exit and one status line per attempted tool.
 that the second run reports only present tools. The separate agentic-job
 integration must invoke installation outside its sandbox and pass the PATH in.
 
-The root `AGENTS.md` guides work on this repository only. When integrating
-with the opencode configuration introduced by #1, copy its Code navigation
-paragraph into `opencode/AGENTS.md` (the file deployed to opencode's config
-directory), and deploy `skills/ast-explore` with the other agent skills.
-That file is not yet present on this branch; the root guidance alone does not
-reach agentic-job runs.
+The root `AGENTS.md` guides work on this repository only. When opencode's
+standing rules move here, copy its Code navigation paragraph into
+`opencode/AGENTS.md` (the file deployed to opencode's config directory), and
+deploy `skills/ast-explore` with the other agent skills. That file is not yet
+present on this branch; the root guidance alone does not reach agentic-job runs.
+
+## opencode
+
+`opencode/opencode.json` and `opencode/opencode-runner.json` are the
+configuration the agentic-job opencode wrapper currently reads from
+`cgwalters-bot/homegit`, `dotfiles/.config/opencode/`, copied unchanged (only
+these two files; that directory's `AGENTS.md` is not taken) at source commit
+`c027d9f4c28c8e21df37f82e978b3fc55fe73cab`. Both are JSONC (opencode accepts
+comments). Until the wrapper reads them from here, homegit stays the live copy;
+change both together. The provider `baseURL` and placeholder `apiKey` are
+nonsecret; the proxy supplies authentication.
 
 The ast-explore skill is copied from `cgwalters-bot/homegit`,
 `dotfiles/.agents/skills/ast-explore/SKILL.md`, at source commit
