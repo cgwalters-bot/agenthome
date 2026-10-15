@@ -1,0 +1,70 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // Praxis only; its proxy supplies authentication.
+  // Anthropic subscription OAuth must not be used through opencode; use Claude Code for that.
+  "enabled_providers": ["praxis"],
+  "model": "praxis/gpt-6.1-sol",
+  "small_model": "praxis/gpt-6-luna",
+  "formatter": false,
+  "autoupdate": false,
+  "permission": "allow",
+  "snapshot": false,
+  "lsp": false,
+  "provider": {
+    "praxis": {
+      "npm": "@ai-sdk/openai",
+      "options": {
+        // Placeholders: this repository is public, and a run replaces both
+        // with its inference proxy's address and its run token.
+        "baseURL": "http://inference.invalid/v1",
+        "apiKey": "unused"
+      },
+      "models": {
+        // Compaction triggers off input when it is set, so the 200k cap
+        // needs "input" as well as "context" to take effect.
+        // Sol is the GPT-6.1 frontier tier — cap at 200k
+        "gpt-6.1-sol": { "limit": { "context": 200000, "input": 200000, "output": 128000 } },
+        // Astra is the GPT-6 reasoning tier, for high-level design work,
+        // used sparingly (the operator's ask); grunt work goes to Luna.
+        "gpt-6-astra": { "limit": { "context": 200000, "input": 200000, "output": 128000 } },
+        // Luna is the GPT-6 cost-sensitive/nano tier — cheap/fast execution model
+        "gpt-6-luna": { "limit": { "context": 200000, "input": 200000, "output": 65536 } }
+      }
+    }
+  },
+  "agent": {
+    "build": {
+      "prompt": "For non-trivial tasks, first use @architect to draft an implementation plan or sketch, then dispatch @general subagents to implement and verify the result. Have another subagent review the work before considering the task complete."
+    },
+    "plan": {
+      "model": "praxis/gpt-6.1-sol"
+    },
+    "general": {
+      "description": "General-purpose subagent for multi-step tasks.",
+      "mode": "subagent",
+      "model": "praxis/gpt-6.1-sol"
+    },
+    "explore": {
+      "description": "Fast read-only codebase exploration.",
+      "mode": "subagent",
+      "model": "praxis/gpt-6-luna"
+    },
+    "fast": {
+      "description": "Cheap/fast subagent for simple, low-stakes tasks.",
+      "mode": "subagent",
+      "model": "praxis/gpt-6-luna"
+    },
+    "compaction": {
+      "model": "praxis/gpt-6.1-sol"
+    },
+    "title": {
+      "model": "praxis/gpt-6-luna"
+    },
+    "architect": {
+      "description": "Architect for hard problems: planning, design, complex debugging, architectural decisions, tricky refactors.",
+      "mode": "subagent",
+      "model": "praxis/gpt-6.1-sol",
+      "color": "#10a37f"
+    }
+  }
+}

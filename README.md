@@ -28,13 +28,23 @@ Failures produce a nonzero exit and one status line per attempted tool.
 that the second run reports only present tools. The separate agentic-job
 integration must invoke installation outside its sandbox and pass the PATH in.
 
-The root `AGENTS.md` guides work on this repository only. When integrating
-with the opencode configuration introduced by #1, copy its Code navigation
-paragraph into `opencode/AGENTS.md` (the file deployed to opencode's config
-directory), and deploy `skills/ast-explore` with the other agent skills.
-That file is not yet present on this branch; the root guidance alone does not
-reach agentic-job runs.
+The root `AGENTS.md` guides work on this repository only. Deploy
+`skills/ast-explore` and `skills/operator-signoff` with the other agent skills.
 
-The ast-explore skill is copied from `cgwalters-bot/homegit`,
-`dotfiles/.agents/skills/ast-explore/SKILL.md`, at source commit
-`c027d9f4c28c8e21df37f82e978b3fc55fe73cab`.
+## opencode configuration
+
+`opencode/` is the configuration agentic-job runs read: point the run's
+`agent-config-path` at `opencode`, and its `agent-config-repo` and ref at this
+repository through the caller's own repository variables. It holds
+`opencode.json` (the one provider and its models), `opencode-runner.json` (the
+unattended-run profile merged over it) and `AGENTS.md` (the standing rules,
+including the Code navigation paragraph above). The provider address and key
+are placeholders, since a run replaces them; `just check` enforces that and
+the wrapper's other rules for this directory.
+
+These files and the ast-explore skill are copied from `cgwalters-bot/homegit`
+(`dotfiles/.config/opencode/` and `dotfiles/.agents/skills/ast-explore/SKILL.md`)
+at source commit `c027d9f4c28c8e21df37f82e978b3fc55fe73cab`. They differ in the
+provider address and the Code navigation paragraph, and `AGENTS.md` moves its
+sign-off rules into `skills/operator-signoff` and names no default operator,
+bot or forge: those come from the operator config.
