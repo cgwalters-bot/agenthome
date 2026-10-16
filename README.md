@@ -38,3 +38,16 @@ reach agentic-job runs.
 The ast-explore skill is copied from `cgwalters-bot/homegit`,
 `dotfiles/.agents/skills/ast-explore/SKILL.md`, at source commit
 `c027d9f4c28c8e21df37f82e978b3fc55fe73cab`.
+
+## opencode configuration
+
+`opencode/` holds `opencode.json` (the one provider and its models) and
+`opencode-runner.json` (the unattended-run profile merged over it) for
+agentic-job runs: set the run's `agent-config-path` to `opencode`, and its
+configuration repository and ref through the caller's own variables. The
+provider address and key are placeholders a run replaces; `just check`
+enforces the placeholders, since this repository is public.
+
+Both files are copied from homegit `dotfiles/.config/opencode/` at source
+commit `c027d9f4c28c8e21df37f82e978b3fc55fe73cab`, with the provider address
+replaced by a placeholder.
