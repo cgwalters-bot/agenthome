@@ -1,0 +1,34 @@
+# An agent's review of every pull request here, through our deployment's
+# review entrypoint, cgwalters-forge/actions' cgwalters-review.yml
+# (agentic-job v0.5.2 with our tailnet join and inference defaults), as in
+# agent-board and tracker. Its bounds (workflow/review.toml,
+# workflow/review-command.toml) and task (workflow/review.md) are read from
+# this repository's base branch; agent, model, runner and inference come
+# from repository variables (the actions README, "Review"). Pinned by SHA
+# so this gate changes only by a reviewed change here; the tailnet and
+# inference broker admit the job_workflow_ref that names that commit, so
+# move the pin and that admission together.
+name: review
+on:
+  # Runs this file from the base branch. No job here checks out or runs the
+  # pull request's head: the agent fetches it as data inside its sandbox,
+  # with no credential, and no secret is passed to the called workflow.
+  pull_request_target: # zizmor: ignore[dangerous-triggers]
+    types: [opened, synchronize, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
+permissions: {}
+jobs:
+  review:
+    if: >-
+      github.event_name == 'pull_request_target' ||
+      (github.event.issue.pull_request && startsWith(github.event.comment.body, '/review'))
+    # Base-owned policy; the head is fetched only as data inside the sandbox.
+    uses: cgwalters-forge/actions/.github/workflows/cgwalters-review.yml@bc0ea824a5c77a191eca503e493dbbb7fe991610 # agentic-job v0.5.2
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: write
+      actions: read
+      id-token: write
+      statuses: write
