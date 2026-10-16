@@ -28,12 +28,10 @@ Failures produce a nonzero exit and one status line per attempted tool.
 that the second run reports only present tools. The separate agentic-job
 integration must invoke installation outside its sandbox and pass the PATH in.
 
-The root `AGENTS.md` guides work on this repository only. When integrating
-with the opencode configuration introduced by #1, copy its Code navigation
-paragraph into `opencode/AGENTS.md` (the file deployed to opencode's config
-directory), and deploy `skills/ast-explore` with the other agent skills.
-That file is not yet present on this branch; the root guidance alone does not
-reach agentic-job runs.
+The root `AGENTS.md` guides work on this repository only. Its Code navigation
+paragraph is copied into `opencode/AGENTS.md` (the file deployed to opencode's
+config directory); deploy `skills/ast-explore` with the other agent skills.
+Until runs receive `skills/`, the skill does not reach agentic-job runs.
 
 The ast-explore skill is copied from `cgwalters-bot/homegit`,
 `dotfiles/.agents/skills/ast-explore/SKILL.md`, at source commit
@@ -51,3 +49,12 @@ enforces the placeholders, since this repository is public.
 Both files are copied from homegit `dotfiles/.config/opencode/` at source
 commit `c027d9f4c28c8e21df37f82e978b3fc55fe73cab`, with the provider address
 replaced by a placeholder.
+
+`opencode/AGENTS.md` holds the standing rules every run loads; the procedures
+are skills in `skills/`, loaded when a task needs them. Both are cut down
+from agenthome#6 (`opencode/AGENTS.md`, which became the rules and the
+`commit-messages`, `upstream-text` and `subagent-review` skills) and from
+homegit's `dotfiles/.agents/skills/commit-review/SKILL.md` at the commit above.
+They name no operator or bot login and no homegit tool, which `just check`
+enforces. The environment variables that will carry the logins to a run are
+still to be decided in agenthome#8.
