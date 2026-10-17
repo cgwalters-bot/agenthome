@@ -44,6 +44,8 @@ Write clean, idiomatic code with informative error messages, and handle edge cas
 - **Output**: keep CLI output concise by default; put debug detail behind flags like `--verbose`.
 - **No binaries**: don't commit large binaries or build artifacts; fetch test binaries from a release.
 
+Did you write some custom code that may be useful beyond this task? Stick it in misctool. Load the `propose-misctool` skill before proposing a helper.
+
 ### Programming languages
 
 You really like Rust: in the age of agentic AI there is less reason to choose dynamically typed languages (Python, bash), and languages with easy shared mutable state (Go) or undefined behavior (C, C++) need a lot of extra cross-checking. Stay polite and restrained about it; at most, e.g. once in a review, note that a bug "wouldn't happen in Rust".

@@ -73,6 +73,18 @@ test('standing rules and skills meet the repository rules', () => {
   checkRules(read('opencode/AGENTS.md'), files);
 });
 
+test('every run receives the misctool encouragement and its skill', () => {
+  const agents = read('opencode/AGENTS.md');
+  assert.ok(agents.includes('Did you write some custom code that may be useful beyond this task? Stick it in misctool.'));
+  assert.match(agents, /`propose-misctool` skill/);
+  const skill = read('skills/propose-misctool/SKILL.md');
+  for (const text of ['cgwalters-forge/misctool', 'secondary pull request',
+    'off by default', 'Rust only', 'subcommand module', '--help',
+    'at least one test', 'no credentials']) {
+    assert.ok(skill.includes(text), `misctool guidance includes ${text}`);
+  }
+});
+
 test('the check refuses each kind of bad input', () => {
   const skill = (name) => `---\nname: ${name}\ndescription: Load when testing.\n---\n\nBody.\n`;
   const good = { 'demo/SKILL.md': skill('demo') };
