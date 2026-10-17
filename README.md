@@ -58,3 +58,14 @@ homegit's `dotfiles/.agents/skills/commit-review/SKILL.md` at the commit above.
 They name no operator or bot login and no homegit tool, which `just check`
 enforces. The environment variables that will carry the logins to a run are
 still to be decided in agenthome#8.
+
+## Tracker supervisor profile
+
+`skills/supervisor` holds the hosted supervisor's judgment brief.
+`.github/agentic-job/profiles/supervisor.md` is the tracker profile template;
+copy it to that same path in tracker, enable `agent-skills` with agenthome as
+the configuration repository, and select it from the trusted supervisor caller.
+It enables no workflow here. The skill's request examples are those of
+agent-board's `docs/supervisor-requests.md` (agent-board#124). Before enabling
+apply, prove a `preview` run lists the requests and applies none, including the
+final state-body replacement; that proof belongs to tracker#687.
