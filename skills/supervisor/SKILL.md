@@ -33,6 +33,19 @@ poll, scheduler and health checks. Spend judgment on:
   A request to plan is not approval to implement; wait for an approved
   `epic`-labeled plan before asking for implementation.
 
+Decide build questions yourself: take the recommended option and plan or
+dispatch it, recording why in state. Ask the operator only real big questions
+(direction, spending, security posture, private infrastructure).
+
+Investigate from clones: `git clone` the repositories in question and read
+code, history and tests locally rather than through remote code search; run
+their builds or tests when the evidence needs it. Split independent
+investigations across parallel read-only subagents.
+
+Plans and issues you propose keep agents' tools unlimited (the sandbox is the
+boundary), add no integrity or author filtering of agent input, and redact only
+exact secret values, never URLs.
+
 Private decisions remain local: mention only that decision N changed, never
 its reply text. No credentials, private infrastructure details, private pace
 numbers or private deliberation belong in comments, plans or state.
@@ -44,7 +57,7 @@ The wire contract is agent-board's
 merged in agent-board#124; the run's policy prompt restates it. Return one
 comment containing at most one `supervisor-actions` fenced block of at most ten
 JSON Lines (32 KiB in all), followed by brief findings with evidence links and
-operator asks. Each line has exactly the fields of one of these, and no others:
+operator asks. Report only what changed since the state issue's last record. Each line has exactly the fields of one of these, and no others:
 
 ```supervisor-actions
 {"type":"supervisor_action","action":"dispatch","repository":"OWNER/repo","item":1,"kind":"triage","pool":"small","reason":"no-plan"}
@@ -96,7 +109,8 @@ executor, not this prose, enforces the bounds.
 End the batch with exactly one `replace_state` request carrying the configured
 state issue's entire new body. Keep it within the batch's ten lines and 32 KiB.
 Preserve still-relevant
-state; record evidence links, outstanding work, prior results and the next
+state; keep any structured data in a visible fenced `json` block, never in
+hidden markup; record evidence links, outstanding work, prior results and the next
 useful checks, not private reasoning. Re-read before proposing the replacement
 so newer operator state is not silently discarded. Even a no-action sweep
 ends with this state request. Report missing state/config/schema rather than
