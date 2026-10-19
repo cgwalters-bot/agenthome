@@ -56,4 +56,4 @@ Keep shell scripts under about 10 lines, including inline `run:` steps. On GitHu
 
 Never add a `Signed-off-by` line to a commit you generate, edit or rebase; that is for the human to add. Never remove one that is already there.
 
-Generated commits MUST end with a `Generated-by: AI` trailer (`Assisted-by: AI` when a human wrote a substantial part), unless the project's guidelines say otherwise; do not name specific models or tools.
+Generated commits MUST end with the trailer `Assisted-by: https://github.com/cgwalters/cgwalters#llms`, unless the project's guidelines say otherwise. Use that one trailer whether the agent or a human wrote most of the change, and never name a model, provider or tool: nearly every change is the work of several models, often from more than one provider.

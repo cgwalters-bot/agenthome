@@ -59,7 +59,7 @@ Specifically avoid in the body:
 - Restating the subject line in prose
 
 Trailers to check:
-- AI trailer present: `Generated-by: AI` by default, `Assisted-by: AI` if a human wrote a substantial part (unless the project says otherwise)
+- Trailer present: exactly `Assisted-by: https://github.com/cgwalters/cgwalters#llms` (unless the project says otherwise); no model, provider or tool named
 - No `Signed-off-by:` added (that's for the human to add); an existing one is kept, never removed
 - `Closes: #N` if the commit resolves a tracked issue
 
