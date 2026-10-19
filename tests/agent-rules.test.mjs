@@ -13,6 +13,10 @@ const MAX_AGENTS_LINES = 60;
 // (a run must not act for whoever happens to be written here; agenthome#8
 // moves the logins into the run's environment) and no frozen homegit tool a
 // run cannot call. The `-forge` lookahead lets links to the org through.
+// The operator's published LLM policy page is the one place a login may
+// appear: it is the attribution target, not an identity the agent assumes.
+const ATTRIBUTION = 'Assisted-by: https://github.com/cgwalters/cgwalters#llms';
+
 const FORBIDDEN = [
   /\bcgwalters(-bot)?\b(?!-forge)/i,
   /bot-land/i,
@@ -51,8 +55,9 @@ function checkRules(agents, files) {
     assert.ok(skills.has(name), `opencode/AGENTS.md names missing skill ${name}`);
   }
   for (const [path, text] of [['opencode/AGENTS.md', agents], ...Object.entries(files).map(([p, t]) => [`skills/${p}`, t])]) {
+    const checked = text.replaceAll(ATTRIBUTION, '');
     for (const pattern of FORBIDDEN) {
-      assert.doesNotMatch(text, pattern, `${path} must not match ${pattern}`);
+      assert.doesNotMatch(checked, pattern, `${path} must not match ${pattern}`);
     }
   }
 }
@@ -71,6 +76,10 @@ test('standing rules and skills meet the repository rules', () => {
   const files = readSkills();
   assert.ok(files['ast-explore/SKILL.md'], 'skills/ were read');
   checkRules(read('opencode/AGENTS.md'), files);
+});
+
+test('every run receives the commit attribution trailer', () => {
+  assert.ok(read('opencode/AGENTS.md').includes(`\`${ATTRIBUTION}\``));
 });
 
 test('every run receives the misctool encouragement and its skill', () => {
