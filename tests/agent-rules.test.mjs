@@ -13,10 +13,15 @@ const MAX_AGENTS_LINES = 60;
 // (a run must not act for whoever happens to be written here; agenthome#8
 // moves the logins into the run's environment) and no frozen homegit tool a
 // run cannot call. The `-forge` lookahead lets links to the org through.
-// The commit trailer and the generated-document notice (below) are the only
-// places a login may appear: they name the operator as the author of the
-// published LLM policy, not as an identity the agent assumes.
+// The commit trailer, the PR footer and the generated-document notice are
+// the only places a login may appear: they name the operator as the author
+// of the published LLM policy, not as an identity the agent assumes.
 const ATTRIBUTION = 'Assisted-by: https://github.com/cgwalters/cgwalters#llms';
+
+// The footer every bot-written pull request description, review and comment
+// ends with (the operator's convention across the forge's bots); like the
+// trailer it names the operator only as the policy's author.
+const FOOTER = 'Generated-by: https://github.com/cgwalters/#llms';
 
 // The generated-document notice (forge-infra docs/repository-checklist.md,
 // "Generated documents"), pinned verbatim: like the trailer it names the
@@ -65,7 +70,7 @@ function checkRules(agents, files) {
     assert.ok(skills.has(name), `opencode/AGENTS.md names missing skill ${name}`);
   }
   for (const [path, text] of [['opencode/AGENTS.md', agents], ...Object.entries(files).map(([p, t]) => [`skills/${p}`, t])]) {
-    const checked = text.replaceAll(ATTRIBUTION, '').replaceAll(NOTICE, '');
+    const checked = text.replaceAll(ATTRIBUTION, '').replaceAll(FOOTER, '').replaceAll(NOTICE, '');
     for (const pattern of FORBIDDEN) {
       assert.doesNotMatch(checked, pattern, `${path} must not match ${pattern}`);
     }
@@ -100,7 +105,20 @@ test('Claude runs receive the same standing rules', () => {
 });
 
 test('every run receives the commit attribution trailer', () => {
-  assert.ok(read('opencode/AGENTS.md').includes(`\`${ATTRIBUTION}\``));
+  const agents = read('opencode/AGENTS.md');
+  assert.ok(agents.includes(`\`${ATTRIBUTION}\``));
+  // agentic-job's configuration appends its own trailers; writing ours as
+  // well gives a commit two attribution trailers.
+  assert.match(agents, /leave it out when the run's instructions say the harness adds the attribution trailer itself/);
+});
+
+test('every run receives the PR and comment footer, and no gist advice', () => {
+  const skill = read('skills/upstream-text/SKILL.md');
+  assert.ok(skill.includes(`\`${FOOTER}\``));
+  assert.match(skill, /never name a model, provider or tool/);
+  // Runs have no gist output, and a gist linked from public text is public.
+  assert.doesNotMatch(skill, /\bgists?\b/i);
+  assert.match(skill, /on the thread in a collapsed `<details>` block/);
 });
 
 // A run meets forge text outside its dispatch wrapper (linked issues, PR
@@ -196,6 +214,7 @@ test('the check refuses each kind of bad input', () => {
     [agents, { 'demo/SKILL.md': 'No frontmatter.\n' }],
     [`${agents}Load the \`missing\` skill too.\n`, good],
     [`${agents}\`${NOTICE}\` Ask cgwalters.\n`, good],
+    [`${agents}\`${FOOTER}\` Ask cgwalters.\n`, good],
   ];
   for (const word of ['cgwalters', 'CGWalters-bot', 'cgwalters-bot', 'bot-land', 'bot-pr', 'bot-operator',
     'bot-git', 'bootstrap.md', 'worker-preamble']) {
