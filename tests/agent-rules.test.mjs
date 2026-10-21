@@ -142,6 +142,37 @@ test('every run receives the misctool encouragement and its skill', () => {
   }
 });
 
+// Hosted runs do not install the structural tools (agenthome#29), so every
+// copy of the navigation rule makes them conditional on being on PATH and
+// names the fallback, or a run spends its turns on `command not found`.
+// Joining lines lets the phrases wrap anywhere.
+const NAVIGATION_PHRASES = [
+  'When `ast-outline` and `ast-grep` are on PATH',
+  '`just install-tools`',
+  'Otherwise use `rg` and scoped reads',
+  'do not retry or install the missing tools',
+];
+
+// The paragraph after a "Code navigation" heading, joined into one line.
+function navigation(text) {
+  const match = /(?:^|\n)#+ Code navigation\n\n([\s\S]*?)(?:\n\n|\n?$)/.exec(text);
+  assert.ok(match, 'has a Code navigation section');
+  return match[1].replaceAll('\n', ' ');
+}
+
+test('structural code navigation is conditional on the tools being installed', () => {
+  const standing = navigation(read('opencode/AGENTS.md'));
+  assert.equal(navigation(read('AGENTS.md')).replace('`skills/ast-explore`', '`ast-explore`'), standing,
+    'AGENTS.md and opencode/AGENTS.md give the same rule');
+  const skill = read('skills/ast-explore/SKILL.md');
+  assert.match(frontmatter(skill).description, /when ast-outline and ast-grep are on PATH.*otherwise use rg/);
+  const body = skill.replace(/^---\n[\s\S]*?\n---\n/, '').replaceAll('\n', ' ');
+  for (const phrase of NAVIGATION_PHRASES) {
+    assert.ok(standing.includes(phrase), `opencode/AGENTS.md says ${phrase}`);
+    assert.ok(body.includes(phrase), `skills/ast-explore/SKILL.md says ${phrase}`);
+  }
+});
+
 test('the check refuses each kind of bad input', () => {
   const skill = (name) => `---\nname: ${name}\ndescription: Load when testing.\n---\n\nBody.\n`;
   const good = { 'demo/SKILL.md': skill('demo') };

@@ -19,11 +19,11 @@ Prefer simple, direct prose, especially when summarizing. Use emoji sparingly. D
 
 ### Code navigation
 
-Before reading an unfamiliar source file, use `ast-outline` for its skeleton,
-then `ast-outline show` for the symbol you need. Before searching for a
-definition or its callers, use `ast-outline` and `ast-grep`, not text grep.
-Use the `ast-explore` skill. Fall back to `rg` and scoped reading only
-when structural tools do not support the language or cannot parse the region.
+When `ast-outline` and `ast-grep` are on PATH (agenthome's `just install-tools`
+installs them), use the `ast-explore` skill: `ast-outline` for a file's skeleton
+and `ast-outline show` for one symbol before reading it, and both before text
+grep for definitions or callers, with `rg` only where they cannot parse the code.
+Otherwise use `rg` and scoped reads; do not retry or install the missing tools.
 
 ## Skills
 
