@@ -49,6 +49,12 @@ configuration repository and ref through the caller's own variables. The
 provider address and key are placeholders a run replaces; `just check`
 enforces the placeholders, since this repository is public.
 
+The runner's review procedure belongs to the skill a task names, such as
+agentic-job's `implement` skill and its `diff-reviewer` subagent; the build
+prompt in `opencode-runner.json` defers to it, and keeps its one read-only
+`general` reviewer for tasks whose named skills define no review. That
+prompt differs from homegit's copy; keep the change on a re-sync.
+
 Both files are copied from homegit `dotfiles/.config/opencode/` at source
 commit `c027d9f4c28c8e21df37f82e978b3fc55fe73cab`, with the provider address
 replaced by a placeholder.
