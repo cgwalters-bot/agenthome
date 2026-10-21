@@ -35,9 +35,10 @@ integration must invoke installation outside its sandbox and pass the PATH in.
 
 The root `AGENTS.md` guides work on this repository only. Its Code navigation
 paragraph is copied into `opencode/AGENTS.md` (the file deployed to opencode's
-config directory, and as `opencode/CLAUDE.md` to Claude's); deploy
-`skills/ast-explore` with the other agent skills.
-Until runs receive `skills/`, the skill does not reach agentic-job runs.
+config directory, and as `opencode/CLAUDE.md` to Claude's), and `just check`
+keeps the two copies the same. agentic-job runs that turn on `agent-skills`
+with this repository as their configuration repository receive `skills/`,
+`skills/ast-explore` included.
 
 The ast-explore skill is copied from `cgwalters-bot/homegit`,
 `dotfiles/.agents/skills/ast-explore/SKILL.md`, at source commit
@@ -68,8 +69,10 @@ from agenthome#6 (`opencode/AGENTS.md`, which became the rules and the
 `commit-messages`, `upstream-text` and `subagent-review` skills) and from
 homegit's `dotfiles/.agents/skills/commit-review/SKILL.md` at the commit above.
 They name no operator or bot login and no homegit tool, which `just check`
-enforces. The environment variables that will carry the logins to a run are
-still to be decided in agenthome#8.
+enforces. agenthome#8 is closed without deciding how a run learns the
+operator and bot logins, so the skills that need the operator
+(`commit-messages`, `upstream-text`, `commit-review`) cannot know it yet; that follow-up has no
+issue yet.
 
 The rules are written for opencode runs, which load `AGENTS.md`, and Claude
 runs, whose agentic-job adapter loads only `CLAUDE.md`: `opencode/CLAUDE.md`

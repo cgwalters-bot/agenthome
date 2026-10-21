@@ -10,8 +10,8 @@ const read = (path) => readFileSync(new URL(path, root), 'utf8');
 const MAX_AGENTS_LINES = 60;
 
 // The standing rules reach every run, so they name no operator or bot login
-// (a run must not act for whoever happens to be written here; agenthome#8
-// moves the logins into the run's environment) and no frozen homegit tool a
+// (a run must not act for whoever happens to be written here; how a
+// run learns the logins is still undecided) and no frozen homegit tool a
 // run cannot call. The `-forge` lookahead lets links to the org through.
 // The commit trailer, the PR footer and the generated-document notice are
 // the only places a login may appear: they name the operator as the author
@@ -159,10 +159,36 @@ test('this repository\'s documents start with the notice', () => {
   assert.notEqual(firstLine(`# T\n\nBody.\n\n${NOTICE}\n`), NOTICE);
 });
 
+// Markdown paragraphs, split on blank lines.
+const paragraphs = (text) => text.split(/\n\s*\n/);
+
+test('the generated-document notice is its own paragraph', () => {
+  const agents = read('opencode/AGENTS.md');
+  const [notice] = paragraphs(agents).filter((p) => p.includes(NOTICE));
+  assert.ok(notice, 'opencode/AGENTS.md carries the notice');
+  assert.ok(!notice.includes(ATTRIBUTION), 'the notice is not part of the trailer paragraph');
+});
+
+// The root AGENTS.md's Code navigation paragraph is copied into the standing
+// rules; the first paragraph under each heading must be the same text.
+function codeNavigation(text, path) {
+  const parts = paragraphs(text);
+  const i = parts.findIndex((p) => /^#+ Code navigation$/.test(p.trim()));
+  assert.ok(i >= 0 && parts[i + 1], `${path} has a Code navigation section`);
+  return parts[i + 1].trim().replace(/\s+/g, ' ');
+}
+
+test('both copies of the Code navigation paragraph match', () => {
+  assert.equal(codeNavigation(read('opencode/AGENTS.md'), 'opencode/AGENTS.md'),
+    codeNavigation(read('AGENTS.md'), 'AGENTS.md'));
+});
+
 test('every run receives the misctool encouragement and its skill', () => {
   const agents = read('opencode/AGENTS.md');
-  assert.ok(agents.includes('Did you write some custom code that may be useful beyond this task? Stick it in misctool.'));
-  assert.match(agents, /`propose-misctool` skill/);
+  // The skill decides whether a run may propose anything (secondary proposals
+  // are off by default), so the rule only says when to load it.
+  assert.ok(agents.includes('- Load the `propose-misctool` skill when you wrote custom code that may be useful beyond this task.'));
+  assert.doesNotMatch(agents, /Stick it in misctool/);
   const skill = read('skills/propose-misctool/SKILL.md');
   for (const text of ['cgwalters-forge/misctool', 'secondary pull request',
     'off by default', 'Rust only', 'subcommand module', '--help',
