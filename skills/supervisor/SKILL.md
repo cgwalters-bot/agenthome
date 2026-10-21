@@ -21,7 +21,7 @@ state or health. Read linked evidence yourself; distinguish facts from inference
 Leave routine watching, pacing, approved-green PR queueing and fix rounds to
 poll, scheduler and health checks. Spend judgment on:
 
-- New failure classes: find the owning bug or propose a tracker issue with
+- New failure classes: find the owning bug or request a `file_bug` with
   evidence, rather than rerunning an unchanged failure indefinitely.
 - Ad-hoc research or triage when evidence calls for it; implement only for
   an approved plan. Check existing issues, PRs and runs to avoid duplicate work.
@@ -54,7 +54,7 @@ numbers or private deliberation belong in comments, plans or state.
 
 The wire contract is agent-board's
 [`docs/supervisor-requests.md`](https://github.com/cgwalters-forge/agent-board/blob/main/docs/supervisor-requests.md),
-merged in agent-board#124; the run's policy prompt restates it. Return one
+at the commit the README records; the run's policy prompt restates it. Return one
 comment containing at most one `supervisor-actions` fenced block of at most ten
 JSON Lines (32 KiB in all), followed by brief findings with evidence links and
 operator asks. Report only what changed since the state issue's last record. Each line has exactly the fields of one of these, and no others:
@@ -63,6 +63,7 @@ operator asks. Report only what changed since the state issue's last record. Eac
 {"type":"supervisor_action","action":"dispatch","repository":"OWNER/repo","item":1,"kind":"triage","pool":"small","reason":"no-plan"}
 {"type":"supervisor_action","action":"comment","repository":"OWNER/repo","item":1,"body":"Investigation and links."}
 {"type":"supervisor_action","action":"create_issue","title":"Decision needed","body":"Question and evidence."}
+{"type":"supervisor_action","action":"file_bug","title":"Failure class","body":"Failure and evidence."}
 {"type":"supervisor_action","action":"close","repository":"OWNER/repo","item":1,"triage_run":"https://github.com/OWNER/tracker/actions/runs/456","triage_comment":789}
 {"type":"supervisor_action","action":"remove_needs_human","repository":"OWNER/repo","item":2}
 {"type":"supervisor_action","action":"replace_state","body":"Arbitrary memory, including structured state."}
@@ -72,26 +73,37 @@ operator asks. Report only what changed since the state issue's last record. Eac
 Placeholders above are not targets. Take repository, kind, pool and reason from
 trusted policy. Reasons are `no-plan`, `no-pull-request`, `merged-open`,
 `secret-shaped`, `apply-refused` and `blocker-closed`; they select fixed briefs,
-not agent-written dispatch text. Dispatch only open, locked, collaborator-only
-issues, not PRs, epics, questions or `needs-human` items, with no run in
-flight; implement also needs native parentage under an open `epic` plan.
+not agent-written dispatch text. Dispatch only open issues, not PRs, epics,
+questions or `needs-human` items, with no supervisor note in the body or any
+comment and no run in flight. Triage and research do not check authors or
+lock; implement also needs native parentage under an open `epic` plan.
 Respect `kindPools`, `maxDispatchesPerPass` and each kind's daily cap; a kind
 whose cap is zero is disabled, so report the missing capability instead.
 
 - `comment` targets a `follow` issue or PR; do not comment on and dispatch the
   same item in one batch, or comment while a run on it is in flight.
-- `create_issue` goes to tracker, assigned to the operator with `needs-human`.
-- `close` needs a successful triage run on that issue and its bot comment
-  saying exactly `Triage found this issue done: RUN_URL`, posted during the
-  run with no reopen, rename, edit or discussion after it. `triage_comment` is
-  that comment's ID; a run link alone is not evidence.
+- `create_issue` goes to tracker, assigned to the operator with `needs-human`:
+  use it only for operator questions.
+- `file_bug` files a failure class in tracker with neither assignee nor
+  `needs-human`, under its own daily cap.
+- Both carry the executor's supervisor note, so neither can be dispatched
+  until a person removes it.
+- `close` needs a successful triage run on that issue and an unedited bot
+  comment made during the run with exactly one `schedule-triage` fenced JSON
+  block whose verdict is `done`, and no reopen, rename, edit or discussion
+  after it. The issue must have been locked since before the run, with only
+  write-access authors and editors, and carry no `epic`, `question` or
+  `needs-human`. `triage_comment` is that comment's ID; a run link alone is
+  not evidence.
 - `remove_needs_human` is only for poll's hold on a bot PR that is approved,
   green, not a draft and blocked solely by a merge conflict on the same head.
 - `status_update` takes `on-track`, `at-risk` or `off-track`, at most daily.
 
 Public titles are at most 256 characters; public bodies are nonempty, at most
 4,000 characters, with no triple-backtick fences, HTML comment markers or the
-triage receipt phrase. Only `replace_state` takes arbitrary text. An invalid
+triage receipt phrase. The executor appends the attribution footer to every
+comment, issue and status update; do not add it. Only `replace_state` takes
+arbitrary text. An invalid
 request rejects the whole batch before any write; do not split batches to
 evade caps.
 

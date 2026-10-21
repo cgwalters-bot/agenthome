@@ -1,0 +1,8 @@
+{"type":"supervisor_action","action":"dispatch","repository":"OWNER/repo","item":1,"kind":"triage","pool":"small","reason":"no-plan"}
+{"type":"supervisor_action","action":"comment","repository":"OWNER/repo","item":1,"body":"Investigation and links."}
+{"type":"supervisor_action","action":"create_issue","title":"Decision needed","body":"Question and evidence."}
+{"type":"supervisor_action","action":"file_bug","title":"Failure class","body":"Failure and evidence."}
+{"type":"supervisor_action","action":"close","repository":"OWNER/repo","item":1,"triage_run":"https://github.com/OWNER/tracker/actions/runs/456","triage_comment":789}
+{"type":"supervisor_action","action":"remove_needs_human","repository":"OWNER/repo","item":2}
+{"type":"supervisor_action","action":"replace_state","body":"Arbitrary memory, including structured state."}
+{"type":"supervisor_action","action":"status_update","status":"on-track","body":"Project progress."}
