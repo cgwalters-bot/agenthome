@@ -202,6 +202,32 @@ test('structural code navigation is conditional on the tools being installed', (
   }
 });
 
+// The executor refuses a whole batch on one line it does not accept, losing
+// the pass's `replace_state`, so the skill's examples must be agent-board's.
+// The fixture is the `jsonl` example block of agent-board's
+// docs/supervisor-requests.md at the commit the README pins; a sync changes
+// commit, fixture and skill in one visible diff.
+const AGENT_BOARD_COMMIT = '9d36c74f5b8a71f94d9a95583f473591f37ec001';
+
+// The lines of the one `supervisor-actions` fenced block in `text`.
+function actionsBlock(text) {
+  const blocks = [...text.matchAll(/^```supervisor-actions\n([\s\S]*?)^```$/gm)];
+  assert.equal(blocks.length, 1, 'exactly one supervisor-actions block');
+  return blocks[0][1];
+}
+
+test('the supervisor skill sends agent-board\'s requests at the pinned commit', () => {
+  const skill = read('skills/supervisor/SKILL.md');
+  assert.equal(actionsBlock(skill), read('tests/fixtures/agent-board-supervisor-actions.jsonl'));
+  assert.ok(read('README.md').includes(AGENT_BOARD_COMMIT), 'README records the pinned commit');
+  // agent-board refuses the old close receipt and signs every write itself.
+  assert.doesNotMatch(skill, /Triage found this issue done/);
+  assert.match(skill, /`schedule-triage`/);
+  assert.doesNotMatch(read('.github/agentic-job/profiles/supervisor.md'), /Generated-by/);
+  assert.throws(() => actionsBlock('No block.\n'));
+  assert.equal(actionsBlock('```supervisor-actions\n{}\n```\n'), '{}\n');
+});
+
 test('the check refuses each kind of bad input', () => {
   const skill = (name) => `---\nname: ${name}\ndescription: Load when testing.\n---\n\nBody.\n`;
   const good = { 'demo/SKILL.md': skill('demo') };

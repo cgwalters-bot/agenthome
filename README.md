@@ -86,6 +86,9 @@ the rules: they take only models from `config.toml`.
 copy it to that same path in tracker, enable `agent-skills` with agenthome as
 the configuration repository, and select it from the trusted supervisor caller.
 It enables no workflow here. The skill's request examples are those of
-agent-board's `docs/supervisor-requests.md` (agent-board#124). Before enabling
+agent-board's `docs/supervisor-requests.md` at commit
+9d36c74f5b8a71f94d9a95583f473591f37ec001; `tests/fixtures/agent-board-supervisor-actions.jsonl`
+vendors that example block, and `just check` fails when the skill differs, so a
+sync updates the commit, the fixture and the skill together. Before enabling
 apply, prove a `preview` run lists the requests and applies none, including the
 final state-body replacement; that proof belongs to tracker#687.

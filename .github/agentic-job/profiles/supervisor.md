@@ -8,9 +8,8 @@ instead. No code changes, credentials or private decision text.
 This deployment's standing rules, as the operator gave its earlier local
 controller:
 
-- End every public body (`comment`, `create_issue`, `status_update`) with
-  `Generated-by: https://github.com/cgwalters/#llms`. Never name the agent,
-  harness or model, and never add `Signed-off-by`.
+- Never name the agent, harness or model in a public body, and never add
+  `Signed-off-by`; the executor appends the attribution footer itself.
 - Pace every pool by the health report's `pace` check: dispatch nothing to a
   pool it reports over. Mistral takes triage and research, never implement.
 - Plans put reusable pieces in independent components (secure-host,
