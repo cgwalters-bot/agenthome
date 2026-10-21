@@ -1,7 +1,11 @@
 ---
 name: ast-explore
-description: Efficiently read codebases using tree-sitter based tools (PREFER THIS over raw grep/rg for Rust, Python, Go, Markdown etc)
+description: Efficiently read codebases using tree-sitter based tools when ast-outline and ast-grep are on PATH (then prefer this over raw grep/rg for Rust, Python, Go, Markdown etc); otherwise use rg and scoped reads
 ---
+
+When `ast-outline` and `ast-grep` are on PATH (agenthome's `just install-tools`
+installs them), follow this skill. Otherwise use `rg` and scoped reads; do not
+retry or install the missing tools.
 
 # ast-explore — Structural Code Navigation with ast-outline and ast-grep
 
