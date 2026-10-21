@@ -7,7 +7,7 @@ Agent configuration for agentic-job runs: per-agent settings and AGENTS.md
 ## Navigation tools
 
 Run `just install-tools` explicitly to install the tools in `tools.toml`.
-Nothing installs by default. Requires Node 22+, npm, curl and tar on Linux
+Nothing installs by default. Requires Node 22+, curl, tar and unzip on Linux
 x86_64. Add `$HOME/.local/bin` to the caller's `PATH` before launching agents;
 the installer uses that path internally but cannot alter its parent's environment.
 No workflow inputs select tool sources or versions: the checked-in manifest owns
@@ -16,12 +16,14 @@ older commands in the user-local prefix may be replaced.
 
 The manifest uses a deliberately restricted TOML subset: `[[tools]]` tables,
 JSON-compatible strings, booleans and string arrays, and whole-line comments.
-uv's release archive is pinned by SHA-256. ast-grep is installed as
-`@ast-grep/cli@0.50.0` through npm into `$HOME/.local`; ast-outline is installed
-with `uv tool install --force ast-outline==1.9.0`. Only the top-level packages
-are pinned; transitive dependencies are accepted as resolved. This opt-in
-installation trusts the package registries and package install/build hooks,
-and is not a sandbox for untrusted packages.
+The uv and ast-grep release archives are pinned by SHA-256. ast-outline is
+installed with `uv tool install --no-build`, `--constraints` from
+`constraints/ast-outline.txt` (every resolved package at an exact version) and
+a fixed `--exclude-newer` date, so a later upload to PyPI cannot change what is
+installed and no sdist build runs. Tools already present at the minimum version,
+including earlier unpinned installs, are left as they are. uv ignores hashes in that constraints file,
+so the wheels themselves are trusted as PyPI served them before that date.
+This opt-in installation is not a sandbox for untrusted packages.
 uv is bootstrapped only when ast-outline needs installing and uv is missing or
 too old. Commands and downloads have time/output limits, with no retry loop.
 Failures produce a nonzero exit and one status line per attempted tool.
