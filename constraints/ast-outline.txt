@@ -1,0 +1,29 @@
+# Every package ast-outline 1.9.0 resolves to, pinned exactly so a new upload
+# cannot change what runs on the host. uv tool install ignores hashes here, so
+# none are listed; --no-build and the manifest's exclude_newer cover the rest.
+# Regenerate with the manifest's exclude_newer date:
+#   echo ast-outline==1.9.0 | uv pip compile --universal --no-build --no-header \
+#     --no-annotate --exclude-newer 2026-10-21T00:00:00Z - -o constraints/ast-outline.txt
+ast-outline==1.9.0
+pathspec==1.1.1
+tree-sitter==0.26.0
+tree-sitter-c-sharp==0.23.5
+tree-sitter-cpp==0.23.4
+tree-sitter-css==0.25.0
+tree-sitter-elixir==0.3.5
+tree-sitter-go==0.25.0
+tree-sitter-html==0.23.2
+tree-sitter-java==0.23.5
+tree-sitter-kotlin==1.1.0
+tree-sitter-lua==0.5.0
+tree-sitter-markdown==0.5.1
+tree-sitter-php==0.25.1
+tree-sitter-python==0.25.0
+tree-sitter-ruby==0.23.1
+tree-sitter-rust==0.24.2
+tree-sitter-scala==0.26.3
+tree-sitter-scss==1.0.0
+tree-sitter-sql==0.3.11
+tree-sitter-swift==0.7.4
+tree-sitter-typescript==0.23.2
+tree-sitter-yaml==0.7.2

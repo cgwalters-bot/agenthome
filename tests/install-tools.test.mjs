@@ -15,10 +15,34 @@ test('manifest parses and rejects unpinned packages and unsupported syntax', () 
   for (const text of ['', manifest.replace('ast-outline==1.9.0', 'ast-outline'),
     manifest.replace('method = "uv"', 'method = "shell"'),
     manifest.replace('member = "uv-x86_64-unknown-linux-gnu/uv"', 'member = "../uv"'),
-    manifest.replace('package = "@ast-grep/cli"', 'package = "@ast-grep/cli@latest"'),
     manifest.replace('dependency_only = true', 'dependency_only = "true"'),
     manifest + '\n[unsupported]\n', manifest.replace('name = "uv"', 'name = "ast-grep"')]) {
     assert.throws(() => parseManifest(text));
+  }
+});
+
+test('manifest rejects entries without a content pin', () => {
+  const unpinned = [
+    manifest.replace('constraints = "constraints/ast-outline.txt"\n', ''),
+    manifest.replace('constraints = "constraints/ast-outline.txt"', 'constraints = "/tmp/ast-outline.txt"'),
+    manifest.replace('exclude_newer = "2026-10-21T00:00:00Z"\n', ''),
+    manifest.replace('exclude_newer = "2026-10-21T00:00:00Z"', 'exclude_newer = "7 days"'),
+    manifest.replace(/sha256 = "0fd3[0-9a-f]+"\n/, ''),
+    manifest.replace(/method = "archive"\nurl = "[^"]+ast-grep[^"]+"\nsha256 = "[^"]+"\nformat = "zip"\nmember = "ast-grep"/,
+      'method = "npm"\npackage = "@ast-grep/cli"'),
+  ];
+  for (const text of unpinned) {
+    assert.notEqual(text, manifest);
+    assert.throws(() => parseManifest(text));
+  }
+});
+
+test('uv constraints pin every resolved package exactly, including the tool itself', () => {
+  for (const t of tools.filter(t => t.method === 'uv')) {
+    const lines = readFileSync(new URL(`../${t.constraints}`, import.meta.url), 'utf8')
+      .split('\n').filter(l => l && !l.startsWith('#'));
+    assert.ok(lines.includes(t.package));
+    for (const line of lines) assert.match(line, /^[a-z0-9-]+==\d+(\.\d+)+$/);
   }
 });
 
@@ -41,16 +65,12 @@ function harness(initial = {}) {
       if (!versions.has(command)) throw new Error('missing');
       return Buffer.from(`${command} ${versions.get(command)}`);
     }
-    if (command === 'npm') {
-      assert.deepEqual(args, ['install', '--global', '--prefix', '/prefix', '@ast-grep/cli@0.50.0']);
-      versions.set('ast-grep', '0.50.0');
-    } else {
-      assert.deepEqual([command, args], ['uv', ['tool', 'install', '--force', 'ast-outline==1.9.0']]);
-      versions.set('ast-outline', '1.9.0');
-    }
+    assert.deepEqual([command, args], ['uv', ['tool', 'install', '--force', '--no-build',
+      '--constraints', '/repo/constraints/ast-outline.txt', '--exclude-newer', '2026-10-21T00:00:00Z', 'ast-outline==1.9.0']]);
+    versions.set('ast-outline', '1.9.0');
   };
   const archive = t => versions.set(t.name, t.minimum_version);
-  return { calls, lines, versions, options: { bin: '/prefix/bin', env: { PATH: '/usr/bin' }, execute, archive, log: l => lines.push(l) } };
+  return { calls, lines, versions, options: { bin: '/prefix/bin', root: '/repo', env: { PATH: '/usr/bin' }, execute, archive, log: l => lines.push(l) } };
 }
 
 test('missing tools bootstrap uv; second run is present-only without installing', () => {
@@ -83,26 +103,28 @@ test('dependency failure fails the run but independent tools still install', () 
   assert.deepEqual(h.lines, ['uv: failed (download failed)', 'ast-outline: failed (uv dependency unavailable)', 'ast-grep: installed']);
 });
 
-test('old ast-grep upgrades through npm and npm failure fails the run', () => {
+test('old ast-grep upgrades through its pinned release archive and archive failure fails the run', () => {
   const h = harness({ 'ast-outline': '1.9.0', 'ast-grep': '0.49.0' });
+  const archive = h.options.archive;
+  h.options.archive = t => {
+    assert.equal(t.name, 'ast-grep');
+    assert.equal(t.method, 'archive');
+    archive(t);
+  };
   assert.equal(installTools(tools, h.options), true);
   assert.deepEqual(h.lines, ['ast-outline: present', 'ast-grep: installed']);
   h.versions.delete('ast-grep');
   h.lines.length = 0;
-  const execute = h.options.execute;
-  h.options.execute = (command, args, env) => {
-    if (command === 'npm') throw new Error('registry unavailable');
-    return execute(command, args, env);
-  };
+  h.options.archive = () => { throw new Error('Release checksum mismatch'); };
   assert.equal(installTools(tools, h.options), false);
-  assert.deepEqual(h.lines, ['ast-outline: present', 'ast-grep: failed (registry unavailable)']);
+  assert.deepEqual(h.lines, ['ast-outline: present', 'ast-grep: failed (Release checksum mismatch)']);
 });
 
 test('post-install version verification is mandatory', () => {
   const h = harness({ 'ast-outline': '1.9.0' });
+  h.options.archive = () => {};
   h.options.execute = (command, args) => {
     if (command === 'ast-outline') return Buffer.from('ast-outline 1.9.0');
-    if (command === 'npm') return;
     throw new Error('missing');
   };
   assert.equal(installTools(tools, h.options), false);

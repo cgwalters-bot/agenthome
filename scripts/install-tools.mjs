@@ -27,14 +27,18 @@ export function parseManifest(text) {
     if (!/^[a-z][a-z0-9-]*$/.test(t.name) || names.has(t.name) || t.command !== t.name
         || !/^\d+\.\d+\.\d+$/.test(t.minimum_version)
         || !Array.isArray(t.version_args) || !t.version_args.every(a => typeof a === 'string')
-        || !['uv', 'npm', 'archive'].includes(t.method)
+        || !['uv', 'archive'].includes(t.method)
         || (t.dependency_only !== undefined && typeof t.dependency_only !== 'boolean')) throw new Error('Invalid tool specification');
     names.add(t.name);
     if (t.method === 'archive' && (!/^https:\/\//.test(t.url) || !/^[a-f0-9]{64}$/.test(t.sha256)
         || !['zip', 'tar.gz'].includes(t.format) || !/^[a-zA-Z0-9_./-]+$/.test(t.member)
         || t.member.startsWith('/') || t.member.split('/').includes('..'))) throw new Error('Invalid archive specification');
-    if (t.method === 'uv' && t.package !== `${t.name}==${t.minimum_version}`) throw new Error('Unpinned package');
-    if (t.method === 'npm' && !/^@[a-z0-9-]+\/[a-z0-9-]+$/.test(t.package)) throw new Error('Invalid npm package');
+    // A version pin on the top-level package alone lets any new upload of a
+    // dependency change what runs on the host: uv entries also need a checked-in
+    // constraints file and a fixed upload cutoff, so the resolution cannot move.
+    if (t.method === 'uv' && (t.package !== `${t.name}==${t.minimum_version}`
+        || t.constraints !== `constraints/${t.name}.txt`
+        || !/^\d{4}-\d{2}-\d{2}T00:00:00Z$/.test(t.exclude_newer))) throw new Error('Unpinned package');
   }
   if (!tools.length) throw new Error('Empty manifest');
   return tools;
@@ -82,7 +86,8 @@ export function installArchive(tool, bin, env, execute = run) {
   }
 }
 
-export function installTools(tools, { bin, env = process.env, execute = run, archive = installArchive, log = console.log }) {
+export function installTools(tools, { bin, root = fileURLToPath(new URL('..', import.meta.url)), env = process.env,
+  execute = run, archive = installArchive, log = console.log }) {
   const environment = { ...env, PATH: `${bin}:${env.PATH ?? ''}`, UV_TOOL_BIN_DIR: bin,
     UV_TOOL_DIR: join(dirname(bin), 'share', 'agenthome', 'uv-tools') };
   const results = new Map();
@@ -99,10 +104,9 @@ export function installTools(tools, { bin, env = process.env, execute = run, arc
         if (t.method === 'uv') {
           const uv = tools.find(t => t.name === 'uv');
           if (!uv || !ensure(uv)) throw new Error('uv dependency unavailable');
-          execute('uv', ['tool', 'install', '--force', t.package], environment);
-        } else if (t.method === 'npm') {
-          execute('npm', ['install', '--global', '--prefix', dirname(bin),
-            `${t.package}@${t.minimum_version}`], environment);
+          // --no-build: no sdist build script runs on the host.
+          execute('uv', ['tool', 'install', '--force', '--no-build', '--constraints', join(root, t.constraints),
+            '--exclude-newer', t.exclude_newer, t.package], environment);
         } else {
           archive(t, bin, environment, execute);
         }
