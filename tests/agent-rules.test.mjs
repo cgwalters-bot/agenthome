@@ -88,6 +88,17 @@ test('standing rules and skills meet the repository rules', () => {
   checkRules(read('opencode/AGENTS.md'), files);
 });
 
+// agentic-job's Claude adapter loads only CLAUDE.md from the configuration
+// path, so without this copy a Claude run gets none of the standing rules and
+// falls back to Claude Code's own trailer and PR footer, which they forbid.
+// One source of truth: the copy must stay byte-identical, so the checks above
+// that pass for opencode/AGENTS.md hold for it too, and are run over it again.
+test('Claude runs receive the same standing rules', () => {
+  const claude = read('opencode/CLAUDE.md');
+  assert.equal(claude, read('opencode/AGENTS.md'), 'opencode/CLAUDE.md is a byte-identical copy of opencode/AGENTS.md');
+  checkRules(claude, readSkills());
+});
+
 test('every run receives the commit attribution trailer', () => {
   assert.ok(read('opencode/AGENTS.md').includes(`\`${ATTRIBUTION}\``));
 });

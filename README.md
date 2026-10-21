@@ -33,7 +33,8 @@ integration must invoke installation outside its sandbox and pass the PATH in.
 
 The root `AGENTS.md` guides work on this repository only. Its Code navigation
 paragraph is copied into `opencode/AGENTS.md` (the file deployed to opencode's
-config directory); deploy `skills/ast-explore` with the other agent skills.
+config directory, and as `opencode/CLAUDE.md` to Claude's); deploy
+`skills/ast-explore` with the other agent skills.
 Until runs receive `skills/`, the skill does not reach agentic-job runs.
 
 The ast-explore skill is copied from `cgwalters-bot/homegit`,
@@ -53,7 +54,7 @@ Both files are copied from homegit `dotfiles/.config/opencode/` at source
 commit `c027d9f4c28c8e21df37f82e978b3fc55fe73cab`, with the provider address
 replaced by a placeholder.
 
-`opencode/AGENTS.md` holds the standing rules every run loads; the procedures
+`opencode/AGENTS.md` holds the standing rules; the procedures
 are skills in `skills/`, loaded when a task needs them. Both are cut down
 from agenthome#6 (`opencode/AGENTS.md`, which became the rules and the
 `commit-messages`, `upstream-text` and `subagent-review` skills) and from
@@ -61,6 +62,14 @@ homegit's `dotfiles/.agents/skills/commit-review/SKILL.md` at the commit above.
 They name no operator or bot login and no homegit tool, which `just check`
 enforces. The environment variables that will carry the logins to a run are
 still to be decided in agenthome#8.
+
+The rules are written for opencode runs, which load `AGENTS.md`, and Claude
+runs, whose agentic-job adapter loads only `CLAUDE.md`: `opencode/CLAUDE.md`
+is a copy that `just check` keeps byte-identical, so edit `opencode/AGENTS.md`
+and copy it over. Both need the run's `agent-config-path` set to `opencode`; a Claude
+run gets the rules only once agentic-job dispatch forwards the configuration
+repository for Claude, as it does for opencode and Vibe. Vibe runs do not get
+the rules: they take only models from `config.toml`.
 
 ## Tracker supervisor profile
 
