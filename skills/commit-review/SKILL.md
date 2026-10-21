@@ -59,7 +59,7 @@ Specifically avoid in the body:
 - Restating the subject line in prose
 
 Trailers to check:
-- Trailer present: exactly `Assisted-by: https://github.com/cgwalters/cgwalters#llms` (unless the project says otherwise); no model, provider or tool named
+- Trailer present: exactly `Assisted-by: https://github.com/cgwalters/cgwalters#llms` (unless the project says otherwise, or the run's instructions say the harness adds the attribution trailer, in which case none from the agent); never two attribution trailers; no model, provider or tool named
 - No `Signed-off-by:` added (that's for the human to add); an existing one is kept, never removed
 - `Closes: #N` if the commit resolves a tracked issue
 
