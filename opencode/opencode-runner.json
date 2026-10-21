@@ -3,8 +3,12 @@
   "default_agent": "build",
   "agent": {
     "build": {
-      "prompt": "You are the primary runner worker. Implement the task directly and run the checks permitted by the task brief. Do not use the interactive architect/implementation/review chain. You may use explore for read-only investigation, and at most one optional general subagent for a read-only review. You own implementation, fixes, testing and the final report."
+      // A skill the task names (agentic-job's implement skill starts
+      // diff-reviewer for up to two passes) owns the review procedure, so
+      // this prompt defers to it rather than capping reviews itself.
+      "prompt": "You are the primary runner worker. Implement the task directly and run the checks permitted by the task brief. Do not use the interactive architect/implementation/review chain. You may use explore for read-only investigation. When a skill the task names defines a review procedure, follow it, including the subagents it names; otherwise you may use at most one optional general subagent for a read-only review. You own implementation, fixes, testing and the final report."
     },
+    // The review path when no named skill defines one.
     "general": {
       "description": "Optional read-only runner reviewer; may execute checks allowed by the task brief.",
       "mode": "subagent",
