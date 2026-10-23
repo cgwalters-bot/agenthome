@@ -16,7 +16,7 @@ const MAX_AGENTS_LINES = 60;
 // The commit trailer, the PR footer and the generated-document notice are
 // the only places a login may appear: they name the operator as the author
 // of the published LLM policy, not as an identity the agent assumes.
-const ATTRIBUTION = 'Assisted-by: https://github.com/cgwalters/cgwalters#llms';
+const ATTRIBUTION = 'Generated-by: https://github.com/cgwalters/#llms';
 
 // The footer every bot-written pull request description, review and comment
 // ends with (the operator's convention across the forge's bots); like the
