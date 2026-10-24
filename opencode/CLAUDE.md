@@ -29,7 +29,7 @@ Otherwise use `rg` and scoped reads; do not retry or install the missing tools.
 
 Skills are [Agent Skills](https://agentskills.io) in `~/.agents/skills/<name>/SKILL.md` (and `.agents/skills/` in a project), each starting with YAML frontmatter that has a `name` and a `description` saying when to use it. If your agent doesn't load skills natively, list that directory at session start and read each skill's frontmatter; when a task matches a description, or you are told to load a skill by name, read its `SKILL.md` in full and follow it. A skill may refer to sibling files by paths relative to its own directory.
 
-- Load the `commit-messages` skill before writing a commit message or folding a fix into existing commits.
+- Load the `commit-messages` skill before writing a commit message or pull request description, or folding a fix into existing commits.
 - Load the `upstream-text` skill before writing a pull request description or a comment on a forge.
 - Load the `subagent-review` skill at the start of a non-trivial task in an interactive session.
 - Load the `commit-review` skill before pushing, opening a pull request, or declaring a commit task complete.
