@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, writeFileSync, existsSync, rmSync, readdirSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { parseManifest, meetsVersion, installTools, installArchive, run } from '../scripts/install-tools.mjs';
+import { parseManifest, meetsVersion, installTools, installArchive, installBinary, run } from '../scripts/install-tools.mjs';
 
 const manifest = readFileSync(new URL('../tools.toml', import.meta.url), 'utf8');
 const tools = parseManifest(manifest);
@@ -34,6 +34,33 @@ test('manifest rejects entries without a content pin', () => {
   for (const text of unpinned) {
     assert.notEqual(text, manifest);
     assert.throws(() => parseManifest(text));
+  }
+});
+
+const binaryEntry = `
+[[tools]]
+name = "fixture"
+command = "fixture"
+minimum_version = "1.0.0"
+version_args = ["--version"]
+method = "binary"
+url = "https://example.com/fixture"
+sha256 = "${'a'.repeat(64)}"
+`;
+
+test('binary entries need an https url and a sha256 and take no archive fields', () => {
+  assert.equal(parseManifest(manifest + binaryEntry).at(-1).method, 'binary');
+  const invalid = [
+    binaryEntry.replace('https://', 'http://'),
+    binaryEntry.replace(/url = .*\n/, ''),
+    binaryEntry.replace(/sha256 = .*\n/, ''),
+    binaryEntry.replace('a'.repeat(64), 'a'.repeat(63)),
+    binaryEntry + 'format = "zip"\n',
+    binaryEntry + 'member = "fixture"\n',
+  ];
+  for (const text of invalid) {
+    assert.notEqual(text, binaryEntry);
+    assert.throws(() => parseManifest(manifest + text), /binary/);
   }
 });
 
@@ -120,6 +147,18 @@ test('old ast-grep upgrades through its pinned release archive and archive failu
   assert.deepEqual(h.lines, ['ast-outline: present', 'ast-grep: failed (Release checksum mismatch)']);
 });
 
+test('binary entries install through the binary method', () => {
+  const h = harness({ 'ast-outline': '1.9.0', 'ast-grep': '0.50.0' });
+  const installed = [];
+  h.options.binary = t => {
+    installed.push(t.name);
+    h.versions.set(t.name, t.minimum_version);
+  };
+  assert.equal(installTools(parseManifest(manifest + binaryEntry), h.options), true);
+  assert.deepEqual(installed, ['fixture']);
+  assert.deepEqual(h.lines, ['ast-outline: present', 'ast-grep: present', 'fixture: installed']);
+});
+
 test('post-install version verification is mandatory', () => {
   const h = harness({ 'ast-outline': '1.9.0' });
   h.options.archive = () => {};
@@ -190,6 +229,36 @@ test('real archive extraction publishes executable bytes and preserves old binar
       assert.equal(readFileSync(join(bin, 'ast-grep'), 'utf8'), 'fixture binary');
       assert.deepEqual(readdirSync(bin), ['ast-grep']);
     }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('binary downloads verify the checksum, publish mode 0755 and preserve the old binary on failure', () => {
+  const root = mkdtempSync(join(tmpdir(), 'agenthome-binary-test-'));
+  try {
+    const bin = join(root, 'bin');
+    const bytes = Buffer.from('fixture binary');
+    const t = { ...parseManifest(manifest + binaryEntry).at(-1), sha256: createHash('sha256').update(bytes).digest('hex') };
+    let download;
+    const execute = (command, args) => {
+      assert.equal(command, 'curl');
+      assert.equal(args.at(-1), t.url);
+      download = args[args.indexOf('--output') + 1];
+      writeFileSync(download, bytes);
+    };
+    installBinary(t, bin, process.env, execute);
+    assert.equal(readFileSync(join(bin, 'fixture'), 'utf8'), 'fixture binary');
+    assert.equal(statSync(join(bin, 'fixture')).mode & 0o777, 0o755);
+    assert.deepEqual(readdirSync(bin), ['fixture']);
+    assert.throws(() => installBinary({ ...t, sha256: '0'.repeat(64) }, bin, process.env,
+      (command, args) => writeFileSync(args[args.indexOf('--output') + 1], 'substituted')), /checksum/);
+    assert.throws(() => installBinary(t, bin, process.env, () => { throw new Error('download failed'); }), /download failed/);
+    assert.throws(() => installBinary({ ...t, sha256: createHash('sha256').update('').digest('hex') }, bin, process.env,
+      (command, args) => writeFileSync(args[args.indexOf('--output') + 1], '')), /Empty release binary/);
+    assert.equal(readFileSync(join(bin, 'fixture'), 'utf8'), 'fixture binary');
+    assert.deepEqual(readdirSync(bin), ['fixture']);
+    assert.equal(existsSync(download), false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

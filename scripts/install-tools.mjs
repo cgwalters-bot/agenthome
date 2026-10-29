@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, mkdirSync, writeFileSync, renameSync, rmSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, mkdirSync, writeFileSync, renameSync, rmSync, statSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,12 +27,14 @@ export function parseManifest(text) {
     if (!/^[a-z][a-z0-9-]*$/.test(t.name) || names.has(t.name) || t.command !== t.name
         || !/^\d+\.\d+\.\d+$/.test(t.minimum_version)
         || !Array.isArray(t.version_args) || !t.version_args.every(a => typeof a === 'string')
-        || !['uv', 'archive'].includes(t.method)
+        || !['uv', 'archive', 'binary'].includes(t.method)
         || (t.dependency_only !== undefined && typeof t.dependency_only !== 'boolean')) throw new Error('Invalid tool specification');
     names.add(t.name);
     if (t.method === 'archive' && (!/^https:\/\//.test(t.url) || !/^[a-f0-9]{64}$/.test(t.sha256)
         || !['zip', 'tar.gz'].includes(t.format) || !/^[a-zA-Z0-9_./-]+$/.test(t.member)
         || t.member.startsWith('/') || t.member.split('/').includes('..'))) throw new Error('Invalid archive specification');
+    if (t.method === 'binary' && (!/^https:\/\//.test(t.url) || !/^[a-f0-9]{64}$/.test(t.sha256)
+        || t.format !== undefined || t.member !== undefined)) throw new Error('Invalid binary specification');
     // A version pin on the top-level package alone lets any new upload of a
     // dependency change what runs on the host: uv entries also need a checked-in
     // constraints file and a fixed upload cutoff, so the resolution cannot move.
@@ -59,14 +61,18 @@ export function run(command, args, env) {
   return execFileSync(command, args, { env, timeout: 180_000, maxBuffer: 128 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
 }
 
+// Downloads a release artifact and stops a substituted/corrupted one before it is used.
+function download(tool, path, env, execute) {
+  execute('curl', ['--fail', '--silent', '--show-error', '--location', '--proto', '=https', '--proto-redir', '=https', '--max-time', '120', '--max-filesize', '134217728', '--output', path, tool.url], env);
+  const digest = createHash('sha256').update(readFileSync(path)).digest('hex');
+  if (digest !== tool.sha256) throw new Error('Release checksum mismatch');
+}
+
 export function installArchive(tool, bin, env, execute = run) {
   const temporary = mkdtempSync(join(tmpdir(), 'agenthome-tools-'));
   try {
     const archive = join(temporary, 'archive');
-    execute('curl', ['--fail', '--silent', '--show-error', '--location', '--proto', '=https', '--proto-redir', '=https', '--max-time', '120', '--max-filesize', '134217728', '--output', archive, tool.url], env);
-    // Stops a substituted/corrupted release artifact before any extraction.
-    const digest = createHash('sha256').update(readFileSync(archive)).digest('hex');
-    if (digest !== tool.sha256) throw new Error('Release checksum mismatch');
+    download(tool, archive, env, execute);
     // Extract only the named binary, never archive paths into the destination.
     const contents = tool.format === 'zip'
       ? execute('unzip', ['-p', archive, tool.member], env)
@@ -86,8 +92,22 @@ export function installArchive(tool, bin, env, execute = run) {
   }
 }
 
+export function installBinary(tool, bin, env, execute = run) {
+  mkdirSync(bin, { recursive: true });
+  const staging = mkdtempSync(join(bin, '.install-'));
+  try {
+    const target = join(staging, tool.command);
+    download(tool, target, env, execute);
+    if (!statSync(target).size) throw new Error('Empty release binary');
+    chmodSync(target, 0o755);
+    renameSync(target, join(bin, tool.command));
+  } finally {
+    rmSync(staging, { recursive: true, force: true });
+  }
+}
+
 export function installTools(tools, { bin, root = fileURLToPath(new URL('..', import.meta.url)), env = process.env,
-  execute = run, archive = installArchive, log = console.log }) {
+  execute = run, archive = installArchive, binary = installBinary, log = console.log }) {
   const environment = { ...env, PATH: `${bin}:${env.PATH ?? ''}`, UV_TOOL_BIN_DIR: bin,
     UV_TOOL_DIR: join(dirname(bin), 'share', 'agenthome', 'uv-tools') };
   const results = new Map();
@@ -107,6 +127,8 @@ export function installTools(tools, { bin, root = fileURLToPath(new URL('..', im
           // --no-build: no sdist build script runs on the host.
           execute('uv', ['tool', 'install', '--force', '--no-build', '--constraints', join(root, t.constraints),
             '--exclude-newer', t.exclude_newer, t.package], environment);
+        } else if (t.method === 'binary') {
+          binary(t, bin, environment, execute);
         } else {
           archive(t, bin, environment, execute);
         }

@@ -16,7 +16,8 @@ older commands in the user-local prefix may be replaced.
 
 The manifest uses a deliberately restricted TOML subset: `[[tools]]` tables,
 JSON-compatible strings, booleans and string arrays, and whole-line comments.
-The uv and ast-grep release archives are pinned by SHA-256. ast-outline is
+The uv and ast-grep release archives are pinned by SHA-256, as is any
+single-file release binary installed with the `binary` method. ast-outline is
 installed with `uv tool install --no-build`, `--constraints` from
 `constraints/ast-outline.txt` (every resolved package at an exact version) and
 a fixed `--exclude-newer` date, so a later upload to PyPI cannot change what is
