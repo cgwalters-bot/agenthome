@@ -43,6 +43,13 @@ test('opencode configuration meets the wrapper rules', () => {
   checkOpencode(read('opencode.json'), read('opencode-runner.json'));
 });
 
+test('GPT-6 reasoning models request encrypted reasoning for stateless turns', () => {
+  const models = read('opencode.json').provider.praxis.models;
+  for (const name of ['gpt-6.1-sol', 'gpt-6-astra', 'gpt-6-luna']) {
+    assert.deepEqual(models[name].options?.include, ['reasoning.encrypted_content'], name);
+  }
+});
+
 test('the check refuses configurations a run would refuse or that leak an address', () => {
   const config = read('opencode.json');
   const runner = read('opencode-runner.json');
