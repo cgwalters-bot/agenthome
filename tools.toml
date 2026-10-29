@@ -1,4 +1,6 @@
 # Explicitly invoked by just install-tools; Linux x86_64 is the initial target.
+# Methods: "uv" (package, constraints, exclude_newer), "archive" (url, sha256,
+# format, member) and "binary" (url, sha256: a single executable file).
 [[tools]]
 name = "ast-outline"
 command = "ast-outline"
