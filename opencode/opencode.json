@@ -20,15 +20,21 @@
         "apiKey": "unused"
       },
       "models": {
+        // cost: USD per million tokens, the list prices in agentic-job's
+        // crates/agentic-job/src/run/prices.toml (gpt-6.x from its PR #2267,
+        // dated 2026-10-29) so opencode's session cost matches run summaries.
+        // cache_write is the input price: prices.toml has no cache-write
+        // premium, as the proxy counts those tokens as plain input.
+
         // Compaction triggers off input when it is set, so the 200k cap
         // needs "input" as well as "context" to take effect.
         // Sol is the GPT-6.1 frontier tier — cap at 200k
-        "gpt-6.1-sol": { "limit": { "context": 200000, "input": 200000, "output": 128000 }, "options": { "include": ["reasoning.encrypted_content"] } },
+        "gpt-6.1-sol": { "cost": { "input": 2.0, "output": 10.0, "cache_read": 0.10, "cache_write": 2.0 }, "limit": { "context": 200000, "input": 200000, "output": 128000 }, "options": { "include": ["reasoning.encrypted_content"] } },
         // Astra is the GPT-6 reasoning tier, for high-level design work,
         // used sparingly (the operator's ask); grunt work goes to Luna.
-        "gpt-6-astra": { "limit": { "context": 200000, "input": 200000, "output": 128000 }, "options": { "include": ["reasoning.encrypted_content"] } },
+        "gpt-6-astra": { "cost": { "input": 10.0, "output": 50.0, "cache_read": 1.0, "cache_write": 10.0 }, "limit": { "context": 200000, "input": 200000, "output": 128000 }, "options": { "include": ["reasoning.encrypted_content"] } },
         // Luna is the GPT-6 cost-sensitive/nano tier — cheap/fast execution model
-        "gpt-6-luna": { "limit": { "context": 200000, "input": 200000, "output": 65536 }, "options": { "include": ["reasoning.encrypted_content"] } }
+        "gpt-6-luna": { "cost": { "input": 0.10, "output": 0.50, "cache_read": 0.01, "cache_write": 0.10 }, "limit": { "context": 200000, "input": 200000, "output": 65536 }, "options": { "include": ["reasoning.encrypted_content"] } }
       }
     }
   },

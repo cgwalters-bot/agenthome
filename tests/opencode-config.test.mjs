@@ -50,6 +50,13 @@ test('GPT-6 reasoning models request encrypted reasoning for stateless turns', (
   }
 });
 
+test('every model carries its list price, so opencode reports session cost', () => {
+  for (const [name, model] of Object.entries(read('opencode.json').provider.praxis.models)) {
+    assert.deepEqual(Object.keys(model.cost ?? {}).sort(), ['cache_read', 'cache_write', 'input', 'output'], name);
+    assert.ok(Object.values(model.cost).every((v) => typeof v === 'number' && v > 0), `${name} prices are positive`);
+  }
+});
+
 test('the check refuses configurations a run would refuse or that leak an address', () => {
   const config = read('opencode.json');
   const runner = read('opencode-runner.json');
