@@ -125,6 +125,13 @@ wire up that consumer, enable tiered hosted runs, or modify tracker. There
 is no new caller setting to enable here. If an operator later stages a
 rendered configuration for opencode, quit and restart opencode to load it.
 
+## Offline role evaluation
+
+`eval/README.md` defines the opt-in three-arm historical evaluation protocol and
+the offline `scripts/summarize-eval.mjs` input format. The sample remains pending
+authorized sizing evidence and the rendered-role interface; no research runs or
+workflow changes are enabled. Its synthetic fixture tests run in `just check`.
+
 ## Tracker supervisor profile
 
 `skills/supervisor` holds the hosted supervisor's judgment brief.
