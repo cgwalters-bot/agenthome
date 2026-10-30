@@ -83,6 +83,48 @@ run gets the rules only once agentic-job dispatch forwards the configuration
 repository for Claude, as it does for opencode and Vibe. Vibe runs do not get
 the rules: they take only models from `config.toml`.
 
+### Proposed prompt-tier source of truth
+
+`prompt-tiers.json` is the proposed agenthome-owned source for per-pool
+prompt tiers and role assignments. These are prompt capability/cost labels,
+not tracker's pool failover tiers: resolution never switches pools. The
+proposed names and mapping are not an operator-approved model table.
+Only `praxis` is represented, using models already configured in
+`opencode/opencode.json`; no other pool's support has been verified. `terra`
+is explicitly unavailable (`model: null`) and falls back to `sol`. Each entry
+declares its fallback, with `null` marking the end of the path. An unavailable
+entry follows that edge; a declared model must exist in the tool catalogue.
+Role assignments preserve the currently working model choices, including
+`architect` using `sol`, rather than implicitly promoting it to `astra`.
+Model identifiers belong in this data or tool configuration, not role prompts.
+
+The concrete failure this check prevents is a misspelled selection choosing
+an unconfigured model, or a fallback cycle hanging resolution. The resolver
+checks every edge, including those behind available models, and walks each
+path at most once per tier. Unknown pools, tiers, undeclared models, cycles
+and paths without terminal models fail with an error. This is offline
+configuration validation, not broker enforcement or a model-availability probe.
+
+Nothing invokes the renderer by default. To inspect the opt-in artifact, run
+`node scripts/render-prompt-tiers.mjs praxis`. It writes deterministic JSON to
+stdout: one effective `opencode.json` with the unattended runner profile
+merged in and the manifest's role assignments applied. Errors produce a
+nonzero exit and no artifact. The committed configuration, context/input
+limits, inert proxy placeholders and runtime defaults remain unchanged.
+`just check` includes table-driven resolver tests and asserts that rendering
+the current manifest preserves the entire effective configuration.
+
+For the proposed agentic-job#1367 contract, agenthome owns the manifest and
+renderer; agentic-job consumes the rendered tool configuration, not a second
+`[models.tiers]` table or a new binary tier parser. A future integration would
+render outside the run, stage the result as `opencode.json` alongside the
+existing rules and skills, and omit the separate runner override because it
+is already merged. Its existing proxy substitution and broker enforcement
+remain responsible for credentials and authorization. This change does not
+wire up that consumer, enable tiered hosted runs, or modify tracker. There
+is no new caller setting to enable here. If an operator later stages a
+rendered configuration for opencode, quit and restart opencode to load it.
+
 ## Tracker supervisor profile
 
 `skills/supervisor` holds the hosted supervisor's judgment brief.
