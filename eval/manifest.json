@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "status": "pending",
+  "pending": "Authorized research sizing evidence and rendered-role interface are not available. Freeze two or three historical tasks only after preflight.",
+  "preflight": null,
+  "tasks": [],
+  "configuration": null,
+  "arms": ["single-strong", "single-cheap", "tiered"],
+  "repetitions": 3,
+  "cachePolicies": ["cold", "warm"],
+  "limits": {"wallSeconds": 1800, "usd": 5, "turns": 100, "tokens": 200000},
+  "decisionRule": "quality-cost-time-v1"
+}
