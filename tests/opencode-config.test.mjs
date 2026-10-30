@@ -1,14 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-
-// opencode accepts JSON with whole-line `//` comments; that is all these files
-// use, so strip only those rather than carry a JSONC parser.
-function parseJsonc(text) {
-  return JSON.parse(text.split('\n').filter((line) => !/^\s*\/\//.test(line)).join('\n'));
-}
+import { spawnSync } from 'node:child_process';
+import { parseJsonc, renderOpencode, resolvePromptTier } from '../scripts/render-prompt-tiers.mjs';
 
 const read = (name) => parseJsonc(readFileSync(new URL(`../opencode/${name}`, import.meta.url), 'utf8'));
+const manifest = JSON.parse(readFileSync(new URL('../prompt-tiers.json', import.meta.url), 'utf8'));
 
 // The rules agentic-job enforces when a run reads this directory (its
 // docs/workflow.md, "Agent configuration repositories"), checked here so a
@@ -82,4 +79,81 @@ test('the check refuses configurations a run would refuse or that leak an addres
 
 test('parseJsonc keeps // inside strings', () => {
   assert.deepEqual(parseJsonc('{\n  // note\n  "u": "http://x/y"\n}'), { u: 'http://x/y' });
+});
+
+test('prompt tiers resolve only the supported pool and explicit fallback edges', () => {
+  const config = read('opencode.json');
+  for (const [pool, tier, expected] of [
+    ['praxis', 'astra', manifest.pools.praxis.astra.model],
+    ['praxis', 'sol', config.model],
+    ['praxis', 'terra', config.model],
+    ['praxis', 'luna', config.small_model],
+  ]) {
+    assert.equal(resolvePromptTier(manifest, pool, tier, config), expected, `${pool}/${tier}`);
+  }
+  const unavailable = structuredClone(manifest);
+  unavailable.pools.praxis.astra.model = null;
+  unavailable.pools.praxis.sol.model = null;
+  assert.equal(resolvePromptTier(unavailable, 'praxis', 'astra', config), config.small_model);
+});
+
+test('prompt-tier errors name unsupported selections and malformed fallback paths', () => {
+  const config = read('opencode.json');
+  for (const { name, pool = 'praxis', tier = 'sol', edit = () => {}, error } of [
+    { name: 'unsupported pool', pool: 'unverified', error: /Unsupported prompt-tier pool.*unverified/ },
+    { name: 'prototype pool', pool: 'toString', error: /Unsupported prompt-tier pool/ },
+    { name: 'unknown tier', tier: 'typo', error: /unknown prompt tier.*typo/ },
+    { name: 'prototype tier', tier: 'toString', error: /unknown prompt tier/ },
+    { name: 'unknown edge', edit: (m) => { m.pools.praxis.terra.fallback = 'typo'; }, error: /unknown fallback tier.*typo/ },
+    { name: 'missing terminal', edit: (m) => { m.pools.praxis.luna.model = null; }, error: /missing terminal model.*luna/ },
+    { name: 'unverified model', edit: (m) => { m.pools.praxis.luna.model = `${config.small_model}-unverified`; }, error: /not in the tool catalogue/ },
+    { name: 'implicit edge', edit: (m) => { delete m.pools.praxis.sol.fallback; }, error: /explicit model and fallback/ },
+    { name: 'self cycle', edit: (m) => { m.pools.praxis.astra.fallback = 'astra'; }, error: /fallback cycle astra -> astra/ },
+    { name: 'multi-tier cycle', edit: (m) => { m.pools.praxis.luna.fallback = 'astra'; }, error: /fallback cycle astra -> sol -> luna -> astra/ },
+    { name: 'unavailable cycle', edit: (m) => { m.pools.praxis.terra.fallback = 'terra'; }, error: /fallback cycle terra -> terra/ },
+  ]) {
+    const edited = structuredClone(manifest);
+    edit(edited);
+    assert.throws(() => resolvePromptTier(edited, pool, tier, config), error, name);
+  }
+  const missing = structuredClone(config);
+  delete missing.provider.praxis.models[config.small_model.split('/')[1]];
+  assert.throws(() => resolvePromptTier(manifest, 'praxis', 'luna', missing), /not in the tool catalogue/);
+});
+
+test('rendered configuration preserves current effective settings and inputs', () => {
+  const base = read('opencode.json');
+  const runner = read('opencode-runner.json');
+  const before = structuredClone({ manifest, base, runner });
+  const expected = { ...base, ...runner, agent: { ...base.agent } };
+  for (const [name, agent] of Object.entries(runner.agent)) {
+    expected.agent[name] = { ...base.agent[name], ...agent };
+  }
+  const rendered = renderOpencode(manifest, 'praxis', base, runner);
+  assert.deepEqual(rendered, expected, 'no change to model choices, limits, prompts, permissions or placeholders');
+  checkOpencode(rendered, {});
+  assert.deepEqual({ manifest, base, runner }, before, 'inputs are not modified');
+  const changed = structuredClone(manifest);
+  changed.roles.agent.general = 'terra';
+  assert.equal(renderOpencode(changed, 'praxis', base, runner).agent.general.model, base.model);
+  changed.roles.agent.general = 'unknown';
+  assert.throws(() => renderOpencode(changed, 'praxis', base, runner), /unknown prompt tier/);
+  changed.roles.agent = { typo: 'sol' };
+  assert.throws(() => renderOpencode(changed, 'praxis', base, runner), /Unknown opencode role typo/);
+});
+
+test('renderer CLI is deterministic and fails without partial output', () => {
+  const script = new URL('../scripts/render-prompt-tiers.mjs', import.meta.url);
+  const run = (...args) => spawnSync(process.execPath, [script.pathname, ...args], { encoding: 'utf8', timeout: 5000 });
+  const first = run('praxis');
+  assert.equal(first.status, 0, first.stderr);
+  assert.equal(first.stderr, '');
+  assert.equal(first.stdout, run('praxis').stdout);
+  assert.deepEqual(JSON.parse(first.stdout), renderOpencode(manifest, 'praxis', read('opencode.json'), read('opencode-runner.json')));
+  for (const args of [[], ['unknown'], ['praxis', 'extra']]) {
+    const result = run(...args);
+    assert.equal(result.status, 1);
+    assert.equal(result.stdout, '');
+    assert.match(result.stderr, /prompt tiers: (Usage:|Unsupported prompt-tier pool)/);
+  }
 });

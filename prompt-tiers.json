@@ -1,0 +1,23 @@
+{
+  "pools": {
+    "praxis": {
+      "astra": { "model": "praxis/gpt-6-astra", "fallback": "sol" },
+      "sol": { "model": "praxis/gpt-6.1-sol", "fallback": "luna" },
+      "terra": { "model": null, "fallback": "sol" },
+      "luna": { "model": "praxis/gpt-6-luna", "fallback": null }
+    }
+  },
+  "roles": {
+    "model": "sol",
+    "small_model": "luna",
+    "agent": {
+      "plan": "sol",
+      "general": "sol",
+      "explore": "luna",
+      "fast": "luna",
+      "compaction": "sol",
+      "title": "luna",
+      "architect": "sol"
+    }
+  }
+}
