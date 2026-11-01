@@ -1,7 +1,7 @@
 {
   "version": 1,
   "status": "pending",
-  "pending": "Authorized research sizing evidence and rendered-role interface are not available. Freeze two or three historical tasks only after preflight.",
+  "pending": "Authorized research sizing evidence and a runner that installs the rendered roles (agentic-job#1367) are not available. Freeze two or three historical tasks only after preflight.",
   "preflight": null,
   "tasks": [],
   "configuration": null,

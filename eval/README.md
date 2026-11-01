@@ -44,11 +44,12 @@ a new full comparison, never pooling the two. No budget is authorized by this fi
 
 ## Rendered-role contract and authorized execution
 
-The sibling agenthome#50 describes a shared role renderer using the foundation's
-prompt-tier manifest/resolver. At implementation time it has no available branch,
-checked-in interface or rendered outputs here. This protocol therefore references
-its eventual artifacts rather than copying role prompts, concrete model IDs or
-tier mappings. Binding its actual CLI/schema is pending; do not invent one.
+The shared role renderer (agenthome#50, "Shared role templates" in the top-level
+README) renders the `tiered` arm's role configuration with `just render-roles`:
+`roles/opencode/eval-tiered.json` for opencode and `roles/claude/agents/` for
+Claude Code; `just check-roles` is its drift check. This protocol references
+those artifacts rather than copying role prompts, concrete model IDs or tier
+mappings. The single-model arms' bundles have no renderer yet.
 
 A frozen `configuration` contains `configRevision`, `harnessRevision` (full
 commits), `roleInterface` (pinned renderer/resolver interface link), `environment`
