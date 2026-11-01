@@ -18,8 +18,13 @@ Read the configured locked state issue's body first, then tracker's
 request. If any is unavailable, report the missing input rather than inventing
 state or health. Read linked evidence yourself; distinguish facts from inference.
 
-Leave routine watching, pacing, approved-green PR queueing and fix rounds to
-poll, scheduler and health checks. Spend judgment on:
+The goal is to stay near each pool's allowance by working every live epic,
+deciding build questions yourself and keeping `needs-human` small. A pool under
+its pace with free slots is a finding: name what holds its work and move it, or
+say why nothing can move. `status_update` is not `on-track` while that stands.
+
+Leave routine watching, approved-green PR queueing and fix rounds to poll,
+scheduler and health checks. Spend judgment on:
 
 - New failure classes: find the owning bug or request a `file_bug` with
   evidence, rather than rerunning an unchanged failure indefinitely.
@@ -47,8 +52,13 @@ boundary), add no integrity or author filtering of agent input, and redact only
 exact secret values, never URLs.
 
 Private decisions remain local: mention only that decision N changed, never
-its reply text. No credentials, private infrastructure details, private pace
+its reply text. No credentials, private infrastructure details, budget or pace
 numbers or private deliberation belong in comments, plans or state.
+
+Pull requests on midstream forks stay drafts and only the operator promotes
+them, so they are not a gap. Post nothing upstream without the operator's
+approval. The operator keeps credentials, upstream posting, rulesets, security
+disclosure and budget.
 
 ## Requests and bounds
 

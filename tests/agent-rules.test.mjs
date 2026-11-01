@@ -250,7 +250,13 @@ test('the supervisor skill sends agent-board\'s requests at the pinned commit', 
   // agent-board refuses the old close receipt and signs every write itself.
   assert.doesNotMatch(skill, /Triage found this issue done/);
   assert.match(skill, /`schedule-triage`/);
-  assert.doesNotMatch(read('.github/agentic-job/profiles/supervisor.md'), /Generated-by/);
+  const profile = read('.github/agentic-job/profiles/supervisor.md');
+  assert.doesNotMatch(profile, /Generated-by/);
+  // Both state the capacity goal, so idle capacity is never reported on-track.
+  for (const text of [skill, profile]) {
+    assert.match(text.replaceAll('\n', ' '), /under its pace with free slots is a finding/);
+  }
+  assert.doesNotMatch(skill.replaceAll('\n', ' '), /Leave routine watching, pacing/);
   assert.throws(() => actionsBlock('No block.\n'));
   assert.equal(actionsBlock('```supervisor-actions\n{}\n```\n'), '{}\n');
 });
