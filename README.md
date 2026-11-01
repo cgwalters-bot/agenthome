@@ -78,7 +78,7 @@ issue yet.
 The rules are written for opencode runs, which load `AGENTS.md`, and Claude
 runs, whose agentic-job adapter loads only `CLAUDE.md`: `opencode/CLAUDE.md`
 is a copy that `just check` keeps byte-identical, so edit `opencode/AGENTS.md`
-and copy it over. Both need the run's `agent-config-path` set to `opencode`; a Claude
+and run `just render-roles` to copy it over. Both need the run's `agent-config-path` set to `opencode`; a Claude
 run gets the rules only once agentic-job dispatch forwards the configuration
 repository for Claude, as it does for opencode and Vibe. Vibe runs do not get
 the rules: they take only models from `config.toml`.
@@ -125,11 +125,49 @@ wire up that consumer, enable tiered hosted runs, or modify tracker. There
 is no new caller setting to enable here. If an operator later stages a
 rendered configuration for opencode, quit and restart opencode to load it.
 
+### Shared role templates
+
+`roles/templates/` holds one prompt per role of the tiered chain: explore,
+plan, execute-lead, worker and review. Each names a tier from
+`prompt-tiers.json` and an access level, never a model. `just render-roles`
+(`scripts/render-roles.mjs`) resolves the tiers with the resolver above and
+writes the same text, under the names `role-explore` and so on, in two forms:
+Claude Code Markdown agents in `roles/claude/agents/`, and opencode agent
+entries in `roles/opencode/eval-tiered.json`, an opt-in profile for the
+`tiered` arm of the evaluation below that makes `role-execute-lead` the
+default agent. It also writes `opencode/CLAUDE.md`. `just check` runs
+`just check-roles`, which refuses outputs that differ from a fresh render.
+
+The prefix keeps the roles from replacing opencode's built-in `plan` and
+`explore`, Claude Code's own subagents, or agentic-job's embedded
+`diff-reviewer`; the lead and the reviewer defer to any review a skill the
+task names. Explore, plan and review cannot edit; only the lead can
+delegate, so a worker cannot start a chain of its own. The read-only roles
+keep the shell for the navigation tools, as the runner's explore does, so
+their prompts rather than a tool rule keep them read-only. Claude Code agents
+take `model: inherit`: the manifest has no verified Claude pool, and Claude
+Code subagents cannot start subagents, so the lead works there only as the
+main agent. `opencode/opencode-runner.json` keeps its direct-worker policy.
+
+Installation contract with agentic-job#1367: nothing delivers these files to
+runs yet. agentic-job (main at 0eb1e4f) installs from a configuration
+repository only its root `skills/` tree and, from `config-path`, the
+instructions and opencode's `opencode.json` and `opencode-runner.json`; it has
+no source-subagent support, so the only subagent a run gets is its embedded
+`diff-reviewer`. #1367's plan would read a configuration repository's root
+`agents/*.md` and install them into `~/.claude/agents/` and
+`~/.config/opencode/agents/` for the current harness. The rendered agents
+stay out of a root `agents/` on purpose: one file would then reach both
+tools, and opencode 1.18.35 rejects a Claude `tools: Read, Grep` line, as its
+`tools` is a map. Adopting them is a separate change once that support lands,
+and the eval profile reaches a run only if a caller stages it as
+`opencode-runner.json`, which no caller does.
+
 ## Offline role evaluation
 
 `eval/README.md` defines the opt-in three-arm historical evaluation protocol and
 the offline `scripts/summarize-eval.mjs` input format. The sample remains pending
-authorized sizing evidence and the rendered-role interface; no research runs or
+authorized sizing evidence and a runner that installs the rendered roles; no research runs or
 workflow changes are enabled. Its synthetic fixture tests run in `just check`.
 
 ## Tracker supervisor profile
