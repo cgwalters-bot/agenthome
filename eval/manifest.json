@@ -1,7 +1,7 @@
 {
   "version": 1,
   "status": "pending",
-  "pending": "Authorized research sizing evidence and a runner that installs the rendered roles (agentic-job#1367) are not available. Freeze two or three historical tasks only after preflight.",
+  "pending": "Blocked at capacity preflight: remaining existing weekly OpenAI capacity and enforceable aggregate/per-cell budgets are unverified. No evaluation launched; see eval/report.md. Three historical tasks and runner role-delivery proof (agentic-job#1367) remain unfrozen.",
   "preflight": null,
   "tasks": [],
   "configuration": null,

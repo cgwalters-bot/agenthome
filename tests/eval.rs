@@ -138,6 +138,31 @@ fn checked_in_sample_stays_pending_without_fabricated_evidence() {
     assert!(error.to_string().contains("before freezing"));
 }
 
+#[test]
+fn archived_preflight_summary_matches_pending_inputs_without_a_measured_verdict() {
+    let load = |name| -> Value {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("eval/{name}.json"));
+        serde_json::from_str(&fs::read_to_string(path).unwrap()).unwrap()
+    };
+    let manifest = load("manifest");
+    let runs = load("runs");
+    let preflight = load("preflight");
+    assert_eq!(runs, json!([]));
+    assert_eq!(load("summary"), summarize(&manifest, &runs).unwrap());
+    assert_eq!(preflight["status"], "blocked");
+    assert_eq!(preflight["capacity"]["status"], "unverified");
+    assert_eq!(
+        preflight["evaluationCellsLaunched"],
+        runs.as_array().unwrap().len()
+    );
+    assert_eq!(preflight["paidProbesLaunched"], 0);
+    assert_eq!(
+        preflight["tasksFrozen"],
+        manifest["tasks"].as_array().unwrap().len()
+    );
+    assert_eq!(preflight["measuredVerdict"], Value::Null);
+}
+
 /// Digests computed before the port by the JavaScript `manifestDigest`, so
 /// recorded runs stay valid.
 #[test]
