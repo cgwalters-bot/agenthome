@@ -12,10 +12,12 @@ not a sandbox for executing untrusted historical code.
 
 ## Research sizing comes first
 
-`manifest.json` is deliberately **pending**, not an executable sample. No
-authorized research evidence was supplied. Historical tasks, commits, sizing,
-resolved models and measured results remain pending; the test fixtures are
-synthetic and are not research evidence.
+`manifest.json` is deliberately **pending**, not an executable sample. The
+[preflight report](report.md) records the bounded no-new-spend authorization and
+the remaining capacity gate. Historical tasks, commits, sizing, resolved models
+and measured results remain pending; the test fixtures are synthetic and are not
+research evidence. `runs.json` is empty, and `summary.json` is its offline summary,
+not a measured comparison.
 
 Before freezing, obtain separate operator authorization identifying the research
 budget, permitted repositories, harness, models and artifact destination. Inspect
