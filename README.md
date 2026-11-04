@@ -4,29 +4,28 @@
 
 Agent configuration for agentic-job runs: per-agent settings and AGENTS.md
 
+## Tooling
+
+The recipes run one Rust crate, `agenthome` (`cargo run -- --help` lists its
+subcommands). They build it from this checkout with Cargo, which needs Rust
+1.85 or later; the first run fetches the locked crates from crates.io. The
+binary reads its inputs from the checkout it was built from: it is not a
+relocatable release artifact. No JavaScript is left, and `just check` fails
+if a `.js`, `.mjs` or `.cjs` file comes back.
+
 ## Navigation tools
 
-The Rust migration is in progress. The edition-2024 crate currently ports only
-the role and prompt-tier renderers; the recipes below still use JavaScript.
-With Rust 1.85 or later, run `cargo run --locked -- render-roles --check` or
-`cargo run --locked -- render-prompt-tiers praxis` to exercise the replacement.
-`cargo test` compares role output against the committed files and prompt-tier
-output against the JavaScript renderer, so Node is still needed for that
-temporary migration test. The binary currently reads the checkout it was built
-from; it is not a relocatable release artifact. Installer, evaluation, remaining
-tests and caller delivery must be ported before removing JavaScript.
-
 Run `just install-tools` explicitly to install the tools in `tools.toml`.
-Nothing installs by default. Requires Node 22+, curl, tar and unzip on Linux
+Nothing installs by default. Requires just, Cargo, curl, tar and unzip on Linux
 x86_64. Add `$HOME/.local/bin` to the caller's `PATH` before launching agents;
 the installer uses that path internally but cannot alter its parent's environment.
 No workflow inputs select tool sources or versions: the checked-in manifest owns
 them. Existing commands at or above the minimum version are left alone;
 older commands in the user-local prefix may be replaced.
 
-The manifest uses a deliberately restricted TOML subset: `[[tools]]` tables,
-JSON-compatible strings, booleans and string arrays, and whole-line comments.
-The uv and ast-grep release archives are pinned by SHA-256, as is any
+The manifest is TOML with a fixed schema: `[[tools]]` tables only, and an
+unknown key, or one that belongs to another method, is refused rather than
+ignored. The uv and ast-grep release archives are pinned by SHA-256, as is any
 single-file release binary installed with the `binary` method. ast-outline is
 installed with `uv tool install --no-build`, `--constraints` from
 `constraints/ast-outline.txt` (every resolved package at an exact version) and
@@ -39,10 +38,15 @@ uv is bootstrapped only when ast-outline needs installing and uv is missing or
 too old. Commands and downloads have time/output limits, with no retry loop.
 Failures produce a nonzero exit and one status line per attempted tool.
 
-`just check` runs offline tests (archive fixtures also require zip).
+`just check` runs `cargo fmt --check`, clippy with warnings denied and the
+offline tests (archive fixtures also require zip).
 `just check-install` runs the installer twice against the network and asserts
 that the second run reports only present tools. The separate agentic-job
 integration must invoke installation outside its sandbox and pass the PATH in.
+Its `[setup.tools]` runs `just install-tools` in a checkout of a pinned commit,
+so a pin at or after the Rust port needs Cargo in place of Node on the runner
+(through `setup.packages` or the image); Cargo builds the installer within the
+recipe's time limit, before network lockdown.
 
 The root `AGENTS.md` guides work on this repository only. Its Code navigation
 paragraph is copied into `opencode/AGENTS.md` (the file deployed to opencode's
@@ -116,7 +120,7 @@ and paths without terminal models fail with an error. This is offline
 configuration validation, not broker enforcement or a model-availability probe.
 
 Nothing invokes the renderer by default. To inspect the opt-in artifact, run
-`node scripts/render-prompt-tiers.mjs praxis`. It writes deterministic JSON to
+`cargo run --locked -- render-prompt-tiers praxis`. It writes deterministic JSON to
 stdout: one effective `opencode.json` with the unattended runner profile
 merged in and the manifest's role assignments applied. Errors produce a
 nonzero exit and no artifact. The committed configuration, context/input
@@ -140,7 +144,7 @@ rendered configuration for opencode, quit and restart opencode to load it.
 `roles/templates/` holds one prompt per role of the tiered chain: explore,
 plan, execute-lead, worker and review. Each names a tier from
 `prompt-tiers.json` and an access level, never a model. `just render-roles`
-(`scripts/render-roles.mjs`) resolves the tiers with the resolver above and
+(`src/render.rs`) resolves the tiers with the resolver above and
 writes the same text, under the names `role-explore` and so on, in two forms:
 Claude Code Markdown agents in `roles/claude/agents/`, and opencode agent
 entries in `roles/opencode/eval-tiered.json`, an opt-in profile for the
@@ -176,7 +180,7 @@ and the eval profile reaches a run only if a caller stages it as
 ## Offline role evaluation
 
 `eval/README.md` defines the opt-in three-arm historical evaluation protocol and
-the offline `scripts/summarize-eval.mjs` input format. The sample remains pending
+the input format of the offline `summarize-eval` subcommand. The sample remains pending
 authorized sizing evidence and a runner that installs the rendered roles; no research runs or
 workflow changes are enabled. Its synthetic fixture tests run in `just check`.
 

@@ -1,4 +1,4 @@
-use std::{fs, path::Path, process::Command};
+use std::{collections::BTreeMap, fs, path::Path, process::Command};
 
 use agenthome::{
     parse_jsonc, read_jsonc,
@@ -363,25 +363,219 @@ fn rust_cli_is_deterministic_and_has_no_partial_output_on_error() {
     }
 }
 
-// Temporary migration proof: retain the JavaScript reference until all of its
-// scripts and suites have been ported. The committed role files above are also
-// independently compared byte-for-byte, without needing Node.
 #[test]
-fn prompt_render_matches_javascript_bytes() {
-    let legacy = Command::new("node")
-        .arg(root().join("scripts/render-prompt-tiers.mjs"))
-        .arg("praxis")
-        .output()
-        .expect("Node is required until the JavaScript migration is complete");
-    assert!(
-        legacy.status.success(),
-        "{}",
-        String::from_utf8_lossy(&legacy.stderr)
-    );
-    let (manifest, base, runner) = inputs();
-    let rendered = render_opencode(&manifest, "praxis", &base, &runner).unwrap();
+fn json_keys_follow_javascript_order() {
+    let value: Value =
+        serde_json::from_str(r#"{"b": 1, "10": 2, "a": 3, "9": 4, "01": 5}"#).unwrap();
+    let keys: Vec<_> = agenthome::javascript_order(&value)
+        .unwrap()
+        .as_object()
+        .unwrap()
+        .keys()
+        .cloned()
+        .collect();
+    assert_eq!(keys, ["9", "10", "b", "a", "01"]);
+}
+
+#[test]
+fn outputs_that_are_not_utf8_are_repaired() {
+    let dir = scratch();
+    let root = dir.path();
+    fs::write(root.join(OPENCODE_PROFILE), b"\xff\xfe").unwrap();
+    let files = render::render_roles(root).unwrap();
+    assert_eq!(render::drift(root, &files).unwrap(), [OPENCODE_PROFILE]);
     assert_eq!(
-        format!("{}\n", agenthome::pretty_json(&rendered).unwrap()),
-        String::from_utf8(legacy.stdout).unwrap()
+        render::write_roles(root, &files).unwrap(),
+        [OPENCODE_PROFILE]
     );
+    assert!(render::drift(root, &files).unwrap().is_empty());
+}
+
+/// Rendered Claude agent frontmatter as `key: value` pairs, and the body.
+fn claude_file(text: &str) -> (BTreeMap<&str, &str>, &str) {
+    let (meta, body) = text
+        .strip_prefix("---\n")
+        .and_then(|rest| rest.split_once("\n---\n\n"))
+        .expect("Claude agent has frontmatter and a body");
+    let meta = meta
+        .lines()
+        .map(|line| line.split_once(": ").expect("key: value"))
+        .collect();
+    (meta, body.trim())
+}
+
+// The keys of opencode v1.18.35's agent schema
+// (packages/core/src/v1/config/agent.ts) and Claude Code's subagent
+// frontmatter that the renderer may emit.
+const OPENCODE_AGENT_KEYS: [&str; 5] = ["description", "mode", "model", "prompt", "permission"];
+const OPENCODE_MODES: [&str; 3] = ["subagent", "primary", "all"];
+const OPENCODE_ACTIONS: [&str; 3] = ["ask", "allow", "deny"];
+const CLAUDE_KEYS: [&str; 4] = ["name", "description", "tools", "model"];
+const CLAUDE_TOOLS: [&str; 6] = ["Read", "Grep", "Glob", "Bash", "Edit", "Write"];
+// Names a rendered role must not shadow: opencode's and Claude Code's
+// built-in agents, and agentic-job's embedded reviewer.
+const RESERVED: [&str; 11] = [
+    "build",
+    "plan",
+    "general",
+    "explore",
+    "compaction",
+    "title",
+    "summary",
+    "diff-reviewer",
+    "Explore",
+    "Plan",
+    "general-purpose",
+];
+
+#[test]
+fn generated_configuration_is_valid_for_the_pinned_tools() {
+    let files = render::render_roles(root()).unwrap();
+    let (_, catalogue, _) = inputs();
+    let profile: Value = serde_json::from_str(&files[OPENCODE_PROFILE]).unwrap();
+    for key in [
+        "provider",
+        "enabled_providers",
+        "disabled_providers",
+        "model",
+        "small_model",
+    ] {
+        assert!(
+            profile.get(key).is_none(),
+            "the eval profile leaves {key} to opencode.json"
+        );
+    }
+    assert_eq!(profile["default_agent"], "role-execute-lead");
+    let agents = profile["agent"].as_object().unwrap();
+    assert_eq!(
+        agents.keys().collect::<Vec<_>>(),
+        ROLES
+            .map(|role| format!("role-{role}"))
+            .iter()
+            .collect::<Vec<_>>()
+    );
+    for (name, agent) in agents {
+        assert!(!RESERVED.contains(&name.as_str()), "{name} is not reserved");
+        assert_eq!(
+            agent.as_object().unwrap().keys().collect::<Vec<_>>(),
+            OPENCODE_AGENT_KEYS,
+            "{name}"
+        );
+        assert!(
+            OPENCODE_MODES.contains(&agent["mode"].as_str().unwrap()),
+            "{name}"
+        );
+        for action in agent["permission"].as_object().unwrap().values() {
+            assert!(
+                OPENCODE_ACTIONS.contains(&action.as_str().unwrap()),
+                "{name}"
+            );
+        }
+        let (provider, id) = agent["model"].as_str().unwrap().split_once('/').unwrap();
+        assert!(
+            catalogue["provider"][provider]["models"].get(id).is_some(),
+            "{name}: model is in the catalogue"
+        );
+    }
+    for role in ROLES {
+        let template =
+            fs::read_to_string(root().join(format!("{TEMPLATE_DIR}/{role}.md"))).unwrap();
+        let template = render::parse_template(role, &template).unwrap();
+        let (meta, body) = claude_file(&files[&format!("{CLAUDE_DIR}/role-{role}.md")]);
+        assert_eq!(body, template.body, "{role}");
+        assert_eq!(meta["name"], template.name, "{role}");
+        assert_eq!(
+            serde_json::from_str::<String>(meta["description"]).unwrap(),
+            template.description,
+            "{role}"
+        );
+        assert!(meta.keys().all(|key| CLAUDE_KEYS.contains(key)), "{role}");
+        assert!(
+            !RESERVED.contains(&meta["name"]) && !meta["name"].contains(':'),
+            "{role}"
+        );
+        assert_eq!(meta["model"], "inherit", "{role}");
+        let tools: Vec<_> = meta
+            .get("tools")
+            .map_or(vec![], |t| t.split(", ").collect());
+        assert!(
+            tools.iter().all(|tool| CLAUDE_TOOLS.contains(tool)),
+            "{role}"
+        );
+        let edits = tools.is_empty() || tools.contains(&"Edit") || tools.contains(&"Write");
+        assert_eq!(edits, template.access != render::Access::ReadOnly, "{role}");
+    }
+}
+
+#[test]
+fn role_prompts_name_no_model_or_tier() {
+    let (_, catalogue, _) = inputs();
+    let mut patterns: Vec<_> = catalogue["provider"]["praxis"]["models"]
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(|id| format!("(?i){}", regex::escape(id)))
+        .collect();
+    patterns.extend(
+        [
+            r"(?i)\bpraxis\b",
+            r"(?i)\bgpt-\d",
+            r"(?i)\bclaude-",
+            r"(?i)\b(opus|sonnet|haiku|fable|gemini|mistral)\b",
+            r"(?i)\b(astra|sol|terra|luna)\b",
+        ]
+        .map(String::from),
+    );
+    let patterns: Vec<_> = patterns
+        .iter()
+        .map(|p| regex::Regex::new(p).unwrap())
+        .collect();
+    let names_model = |text: &str| {
+        patterns
+            .iter()
+            .find(|p| p.is_match(text))
+            .map(|p| p.to_string())
+    };
+    let files = render::render_roles(root()).unwrap();
+    let rendered = files
+        .iter()
+        .filter(|(path, _)| path.starts_with(CLAUDE_DIR));
+    for role in ROLES {
+        let template =
+            fs::read_to_string(root().join(format!("{TEMPLATE_DIR}/{role}.md"))).unwrap();
+        let body = render::parse_template(role, &template).unwrap().body;
+        assert_eq!(names_model(&body), None, "{role}");
+    }
+    for (path, text) in rendered {
+        assert_eq!(names_model(text), None, "{path}");
+    }
+    for bad in [
+        "Use gpt-6-luna.",
+        "Ask Opus.",
+        "Run on the luna tier.",
+        "praxis/x",
+        "claude-opus-5-5",
+    ] {
+        assert!(names_model(bad).is_some(), "{bad}");
+    }
+}
+
+#[test]
+fn standing_rules_carry_no_role_text() {
+    let rules = fs::read_to_string(root().join(STANDING_RULES)).unwrap();
+    let rules = rules.split_whitespace().collect::<Vec<_>>().join(" ");
+    let paragraph = regex::Regex::new(r"\n\s*\n").unwrap();
+    for role in ROLES {
+        let template =
+            fs::read_to_string(root().join(format!("{TEMPLATE_DIR}/{role}.md"))).unwrap();
+        let body = render::parse_template(role, &template).unwrap().body;
+        for text in paragraph.split(&body) {
+            let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
+            let sentence = text.split(". ").next().unwrap();
+            assert!(
+                !rules.contains(sentence),
+                "{STANDING_RULES} repeats {role}: {sentence}"
+            );
+        }
+    }
 }
