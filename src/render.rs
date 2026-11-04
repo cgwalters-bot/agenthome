@@ -151,12 +151,13 @@ pub fn render_roles(root: &Path) -> Result<BTreeMap<String, String>> {
 pub fn drift(root: &Path, files: &BTreeMap<String, String>) -> Result<Vec<String>> {
     let mut changed = Vec::new();
     for (path, content) in files {
-        let current = match fs::read_to_string(root.join(path)) {
+        // Compare bytes, so an output that is not UTF-8 is drift to repair.
+        let current = match fs::read(root.join(path)) {
             Ok(current) => Some(current),
             Err(error) if error.kind() == ErrorKind::NotFound => None,
             Err(error) => return Err(error).with_context(|| format!("read {path}")),
         };
-        if current.as_ref() != Some(content) {
+        if current.as_deref() != Some(content.as_bytes()) {
             changed.push(path.clone());
         }
     }

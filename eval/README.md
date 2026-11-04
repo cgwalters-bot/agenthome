@@ -36,8 +36,9 @@ text), `checks: {artifact, sha256}` (64 hex), and `sizingEvidence`. Change statu
 to `frozen` only with evidence and the configuration below. Manifest, tasks,
 checks and configuration must be immutable artifacts for the comparison; record
 their content digests in the research report. Every run carries `manifestSha256`,
-computed by the exported `manifestDigest` function in `scripts/summarize-eval.mjs`
-(SHA-256 of JSON with recursively sorted object keys, preserving array order).
+computed by `manifest_digest` in `src/eval.rs` (SHA-256 of the `JSON.stringify`
+spelling of the manifest with recursively sorted object keys, preserving array
+order, so digests from the earlier JavaScript summarizer stay valid).
 The summary includes this digest. It binds the entire sample, limits and policies,
 not just the current run's task. A changed task/check/config requires
 a new full comparison, never pooling the two. No budget is authorized by this file.
@@ -88,7 +89,7 @@ For an authorized research run:
 4. Run independent checks outside agent control; archive commands, exit codes,
    logs, patch and transcripts. Normalize exposed telemetry to the records below.
    Missing provider fields remain unavailable, never inferred from context size.
-5. Summarize offline with `node scripts/summarize-eval.mjs MANIFEST.json RUNS.json`.
+5. Summarize offline with `cargo run --locked -- summarize-eval MANIFEST.json RUNS.json`.
    Both inputs are JSON documents; RUNS is an array, not a partial JSONL stream.
    Malformed/truncated JSON is rejected, not silently repaired. No commands from
    either document are executed. `just check` exercises synthetic fixtures offline.

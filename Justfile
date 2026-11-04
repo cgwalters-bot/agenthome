@@ -1,17 +1,21 @@
+agenthome := "cargo run --locked --quiet --"
+
 default:
     @just --list
 
 install-tools:
-    node scripts/install-tools.mjs
+    {{agenthome}} install-tools
 
 check: check-roles
-    node --test tests/install-tools.test.mjs tests/opencode-config.test.mjs tests/agent-rules.test.mjs tests/eval.test.mjs tests/roles.test.mjs
+    cargo fmt --check
+    cargo clippy --locked --all-targets -- -D warnings
+    cargo test --locked
 
 render-roles:
-    node scripts/render-roles.mjs
+    {{agenthome}} render-roles
 
 check-roles:
-    node scripts/render-roles.mjs --check
+    {{agenthome}} render-roles --check
 
 check-install:
-    node scripts/check-install.mjs
+    {{agenthome}} check-install
