@@ -6,6 +6,16 @@ Agent configuration for agentic-job runs: per-agent settings and AGENTS.md
 
 ## Navigation tools
 
+The Rust migration is in progress. The edition-2024 crate currently ports only
+the role and prompt-tier renderers; the recipes below still use JavaScript.
+With Rust 1.85 or later, run `cargo run --locked -- render-roles --check` or
+`cargo run --locked -- render-prompt-tiers praxis` to exercise the replacement.
+`cargo test` compares role output against the committed files and prompt-tier
+output against the JavaScript renderer, so Node is still needed for that
+temporary migration test. The binary currently reads the checkout it was built
+from; it is not a relocatable release artifact. Installer, evaluation, remaining
+tests and caller delivery must be ported before removing JavaScript.
+
 Run `just install-tools` explicitly to install the tools in `tools.toml`.
 Nothing installs by default. Requires Node 22+, curl, tar and unzip on Linux
 x86_64. Add `$HOME/.local/bin` to the caller's `PATH` before launching agents;
