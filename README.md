@@ -7,7 +7,7 @@ Agent configuration for agentic-job runs: per-agent settings and AGENTS.md
 ## Tooling
 
 The recipes run one Rust crate, `agenthome` (`cargo run -- --help` lists its
-subcommands). They build it from this checkout with Cargo, which needs Rust
+subcommands). They build it from this checkout with Cargo. Building it requires Rust
 1.85 or later; the first run fetches the locked crates from crates.io. The
 binary reads its inputs from the checkout it was built from: it is not a
 relocatable release artifact. No JavaScript is left, and `just check` fails
@@ -19,12 +19,12 @@ Run `just install-tools` explicitly to install the tools in `tools.toml`.
 Nothing installs by default. Requires just, Cargo, curl, tar and unzip on Linux
 x86_64. Add `$HOME/.local/bin` to the caller's `PATH` before launching agents;
 the installer uses that path internally but cannot alter its parent's environment.
-No workflow inputs select tool sources or versions: the checked-in manifest owns
+Workflow inputs don't select tool sources or versions: the checked-in manifest sets
 them. Existing commands at or above the minimum version are left alone;
 older commands in the user-local prefix may be replaced.
 
-The manifest is TOML with a fixed schema: `[[tools]]` tables only, and an
-unknown key, or one that belongs to another method, is refused rather than
+The manifest is TOML with a fixed schema: only `[[tools]]` tables are allowed.
+Unknown keys and keys that belong to another method are rejected rather than
 ignored. The uv and ast-grep release archives are pinned by SHA-256, as is any
 single-file release binary installed with the `binary` method. ast-outline is
 installed with `uv tool install --no-build`, `--constraints` from
@@ -34,7 +34,7 @@ installed and no sdist build runs. Tools already present at the minimum version,
 including earlier unpinned installs, are left as they are. uv ignores hashes in that constraints file,
 so the wheels themselves are trusted as PyPI served them before that date.
 This opt-in installation is not a sandbox for untrusted packages.
-uv is bootstrapped only when ast-outline needs installing and uv is missing or
+uv is bootstrapped only when ast-outline needs to be installed and uv is missing or
 too old. Commands and downloads have time/output limits, with no retry loop.
 Failures produce a nonzero exit and one status line per attempted tool.
 
@@ -68,10 +68,10 @@ configuration repository and ref through the caller's own variables. The
 provider address and key are placeholders a run replaces; `just check`
 enforces the placeholders, since this repository is public.
 
-The runner's review procedure belongs to the skill a task names, such as
-agentic-job's `implement` skill and its `diff-reviewer` subagent; the build
-prompt in `opencode-runner.json` defers to it, and keeps its one read-only
-`general` reviewer for tasks whose named skills define no review. That
+The runner follows the review procedure in the skill named by a task, such as
+agentic-job's `implement` skill and its `diff-reviewer` subagent. The build
+prompt in `opencode-runner.json` defers to that procedure and keeps its one read-only
+`general` reviewer for tasks whose named skills don't define a review. That
 prompt differs from homegit's copy; keep the change on a re-sync.
 
 Both files are copied from homegit `dotfiles/.config/opencode/` at source
@@ -83,16 +83,17 @@ are skills in `skills/`, loaded when a task needs them. Both are cut down
 from agenthome#6 (`opencode/AGENTS.md`, which became the rules and the
 `commit-messages`, `upstream-text` and `subagent-review` skills) and from
 homegit's `dotfiles/.agents/skills/commit-review/SKILL.md` at the commit above.
-They name no operator or bot login and no homegit tool, which `just check`
-enforces. agenthome#8 is closed without deciding how a run learns the
+They don't name an operator or bot login or a homegit tool. `just check`
+enforces this. agenthome#8 is closed without deciding how a run learns the
 operator and bot logins, so the skills that need the operator
-(`commit-messages`, `upstream-text`, `commit-review`) cannot know it yet; that follow-up has no
-issue yet.
+(`commit-messages`, `upstream-text`, `commit-review`) cannot know it yet. There is no
+issue for that follow-up yet.
 
-The rules are written for opencode runs, which load `AGENTS.md`, and Claude
-runs, whose agentic-job adapter loads only `CLAUDE.md`: `opencode/CLAUDE.md`
-is a copy that `just check` keeps byte-identical, so edit `opencode/AGENTS.md`
-and run `just render-roles` to copy it over. Both need the run's `agent-config-path` set to `opencode`; a Claude
+The rules are written for opencode runs and Claude runs. opencode runs load
+`AGENTS.md`; the agentic-job adapter for Claude loads only `CLAUDE.md`.
+`opencode/CLAUDE.md` is a copy that `just check` keeps byte-identical, so edit
+`opencode/AGENTS.md` and run `just render-roles` to copy it over.
+Both need the run's `agent-config-path` set to `opencode`. A Claude
 run gets the rules only once agentic-job dispatch forwards the configuration
 repository for Claude, as it does for opencode and Vibe. Vibe runs do not get
 the rules: they take only models from `config.toml`.
@@ -112,8 +113,8 @@ Role assignments preserve the currently working model choices, including
 `architect` using `sol`, rather than implicitly promoting it to `astra`.
 Model identifiers belong in this data or tool configuration, not role prompts.
 
-The concrete failure this check prevents is a misspelled selection choosing
-an unconfigured model, or a fallback cycle hanging resolution. The resolver
+This check prevents a misspelled selection from choosing an unconfigured
+model and a fallback cycle from hanging resolution. The resolver
 checks every edge, including those behind available models, and walks each
 path at most once per tier. Unknown pools, tiers, undeclared models, cycles
 and paths without terminal models fail with an error. This is offline
@@ -154,8 +155,8 @@ default agent. It also writes `opencode/CLAUDE.md`. `just check` runs
 
 The prefix keeps the roles from replacing opencode's built-in `plan` and
 `explore`, Claude Code's own subagents, or agentic-job's embedded
-`diff-reviewer`; the lead and the reviewer defer to any review a skill the
-task names. Explore, plan and review cannot edit; only the lead can
+`diff-reviewer`; the lead and the reviewer follow any review procedure defined
+by a skill named in the task. Explore, plan and review cannot edit; only the lead can
 delegate, so a worker cannot start a chain of its own. The read-only roles
 keep the shell for the navigation tools, as the runner's explore does, so
 their prompts rather than a tool rule keep them read-only. Claude Code agents
@@ -164,8 +165,8 @@ Code subagents cannot start subagents, so the lead works there only as the
 main agent. `opencode/opencode-runner.json` keeps its direct-worker policy.
 
 Installation contract with agentic-job#1367: nothing delivers these files to
-runs yet. agentic-job (main at 0eb1e4f) installs from a configuration
-repository only its root `skills/` tree and, from `config-path`, the
+runs yet. From a configuration repository, agentic-job (main at 0eb1e4f)
+installs only the root `skills/` tree and, from `config-path`, the
 instructions and opencode's `opencode.json` and `opencode-runner.json`; it has
 no source-subagent support, so the only subagent a run gets is its embedded
 `diff-reviewer`. #1367's plan would read a configuration repository's root
@@ -173,15 +174,15 @@ no source-subagent support, so the only subagent a run gets is its embedded
 `~/.config/opencode/agents/` for the current harness. The rendered agents
 stay out of a root `agents/` on purpose: one file would then reach both
 tools, and opencode 1.18.35 rejects a Claude `tools: Read, Grep` line, as its
-`tools` is a map. Adopting them is a separate change once that support lands,
-and the eval profile reaches a run only if a caller stages it as
-`opencode-runner.json`, which no caller does.
+`tools` is a map. Adopting them is a separate change once that support lands.
+The eval profile reaches a run only if a caller stages it as
+`opencode-runner.json`. No caller does this.
 
 ## Offline role evaluation
 
 `eval/README.md` defines the opt-in three-arm historical evaluation protocol and
-the input format of the offline `summarize-eval` subcommand. The sample remains pending
-authorized sizing evidence and a runner that installs the rendered roles; no research runs or
+the input format of the offline `summarize-eval` subcommand. The sample still needs
+authorized sizing evidence and a runner that installs the rendered roles. No research runs or
 workflow changes are enabled. Its synthetic fixture tests run in `just check`.
 
 ## Tracker supervisor profile
@@ -190,10 +191,10 @@ workflow changes are enabled. Its synthetic fixture tests run in `just check`.
 `.github/agentic-job/profiles/supervisor.md` is the tracker profile template;
 copy it to that same path in tracker, enable `agent-skills` with agenthome as
 the configuration repository, and select it from the trusted supervisor caller.
-It enables no workflow here. The skill's request examples are those of
+It doesn't enable a workflow here. The skill's request examples come from
 agent-board's `docs/supervisor-requests.md` at commit
 9d36c74f5b8a71f94d9a95583f473591f37ec001; `tests/fixtures/agent-board-supervisor-actions.jsonl`
 vendors that example block, and `just check` fails when the skill differs, so a
 sync updates the commit, the fixture and the skill together. Before enabling
-apply, prove a `preview` run lists the requests and applies none, including the
+apply, prove a `preview` run lists the requests and doesn't apply any, including the
 final state-body replacement; that proof belongs to tracker#687.
