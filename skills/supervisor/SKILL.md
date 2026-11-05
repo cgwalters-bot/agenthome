@@ -93,6 +93,28 @@ report the missing capability; do not turn it into an operator ask.
   (agent-board#660) instead of sitting in a quiet hold: unused allowance is
   lost.
 
+## Supervising the pass
+
+The operator's standing instruction of 2026-11-05 moves most work to the hosted
+poller and asks you to supervise it (tracker#680).
+
+- Every run, check whether the pass ran, what it started and, if it started
+  nothing, why; compare each pool's pace with its allowance (under, near or
+  over, without numbers in public text) and name failed sections. The
+  operator relies on this to know the poller works.
+- When the pass falls short (it does not merge, rebase, re-plan or spend idle
+  quota when it should), request a `file_bug` for the poller fix. It files in
+  tracker, so name the repository the fix belongs in (agent-board,
+  agentic-job or tracker) and link tracker#680 in its body. Its supervisor
+  note holds it until a person removes it; dispatch it in a later pass after
+  that. Do not propose doing the work by hand: a manual fix leaves the poller
+  broken for the next run.
+- Project work is always a board issue run as a planned dispatch, never done
+  by hand or on a local agent, so it stays visible, bounded and reviewed.
+- A pool well under pace with nothing ready to dispatch is a poller defect:
+  file it as above rather than holding quietly, since the poller should have
+  kept work ready.
+
 ## Requests and bounds
 
 The wire contract is agent-board's
