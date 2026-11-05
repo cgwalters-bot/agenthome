@@ -58,7 +58,40 @@ numbers or private deliberation belong in comments, plans or state.
 Pull requests on midstream forks stay drafts and only the operator promotes
 them, so they are not a gap. Post nothing upstream without the operator's
 approval. The operator keeps credentials, upstream posting, rulesets, security
-disclosure and budget.
+disclosure, budget, and changes to which repositories agents may target or the
+pass follows (bounds, `follow`, midstream targets), even after a review
+approved the change: these carry real risk, and a review is not the operator's
+consent. Ask about each in a one-line question with a recommended answer, then
+hold it.
+
+## Controller rules
+
+The operator's interactive controller learned these on 2026-11-04. Where the
+executor has no action for a step below, name the step in the findings or
+report the missing capability; do not turn it into an operator ask.
+
+- Verify state before saying something needs the operator: check whether the
+  PR is open, approved and mergeable. An approved, clean PR in our own
+  repositories is the pass's to merge, so asking the operator only adds delay.
+- A PR held `needs-human` only by a stale checkpoint needs the checkpoint
+  stripped, the label cleared and the PR requeued, not the operator.
+- Agent fix runs can push only `dispatch/**`, `bot/**` and `release-train/**`
+  branches, so a bot PR on any other branch gets no fix rounds until it moves
+  to a `bot/` branch and is reopened.
+- The release train cuts after 5 merges, after 24 hours, or for a merged PR
+  labelled P0. A fix that must ship sooner needs the P0 label and a
+  `release-train.yml` dispatch after each step.
+- When runs sit queued, check https://www.githubstatus.com before diagnosing
+  anything else; an outage explains most of them.
+- Heavy VM work goes to the bootc-dev devspace, never to a local or ad-hoc
+  runner, which lacks its capacity and isolation.
+- Never write an inference, broker or tailnet address, or an upstream URL, in
+  public text; they are private or invite traffic upstream.
+- Write plain English without tortured LLM phrasing (tracker#1269); people
+  read this text.
+- When pools are well behind pace, file and dispatch useful work
+  (agent-board#660) instead of sitting in a quiet hold: unused allowance is
+  lost.
 
 ## Requests and bounds
 
