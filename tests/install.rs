@@ -55,7 +55,7 @@ fn manifest_parses_and_refuses_unpinned_or_unsupported_entries() {
     let tools = tools();
     assert_eq!(
         tools.iter().map(|t| t.name.as_str()).collect::<Vec<_>>(),
-        ["ast-outline", "ast-grep", "uv"]
+        ["ast-outline", "ast-grep", "uv", "cgwalters-forge-misctool"]
     );
     assert!(tools[2].dependency_only);
     let manifest = manifest();
@@ -148,7 +148,10 @@ fn manifest_parses_and_refuses_unpinned_or_unsupported_entries() {
 #[test]
 fn binary_entries_need_an_https_url_and_a_sha256_and_take_no_archive_fields() {
     let tools = parse_manifest(&(manifest() + BINARY_ENTRY)).unwrap();
-    assert!(matches!(tools[3].source, Source::Binary { .. }));
+    assert!(matches!(
+        tools.last().unwrap().source,
+        Source::Binary { .. }
+    ));
     for (from, to) in [
         ("https://", "http://"),
         ("url = \"https://example.com/fixture\"\n", ""),
@@ -168,6 +171,25 @@ fn binary_entries_need_an_https_url_and_a_sha256_and_take_no_archive_fields() {
         let error = format!("{:#}", parse_manifest(&(manifest() + &entry)).unwrap_err());
         assert!(error.contains("binary"), "{from:?} -> {to:?}: {error}");
     }
+}
+
+#[test]
+fn misctool_manifest_pins_the_attested_release_binary() {
+    let tool = tools()
+        .into_iter()
+        .find(|tool| tool.name == "cgwalters-forge-misctool")
+        .unwrap();
+    assert_eq!(tool.command, "cgwalters-forge-misctool");
+    assert_eq!(tool.minimum_version, "0.1.0");
+    assert_eq!(tool.version_args, ["--version"]);
+    assert!(!tool.dependency_only);
+    assert_eq!(
+        tool.source,
+        Source::Binary {
+            url: "https://github.com/cgwalters-forge/misctool/releases/download/v0.1.0/cgwalters-forge-misctool".into(),
+            sha256: "d30c074c86cde1002a6cdcce6b218e65f0d39a8de859b1508a0268a8199cb59a".into(),
+        }
+    );
 }
 
 #[test]
@@ -324,13 +346,24 @@ fn missing_tools_bootstrap_uv_and_a_second_run_only_checks() {
         [
             "uv: installed",
             "ast-outline: installed",
-            "ast-grep: installed"
+            "ast-grep: installed",
+            "cgwalters-forge-misctool: installed"
         ]
     );
     fake.installs.clear();
     assert!(install_tools(&tools(), &options(), &mut fake));
-    assert_eq!(fake.lines, ["ast-outline: present", "ast-grep: present"]);
-    assert_eq!(fake.calls, ["ast-outline", "ast-grep"]);
+    assert_eq!(
+        fake.lines,
+        [
+            "ast-outline: present",
+            "ast-grep: present",
+            "cgwalters-forge-misctool: present"
+        ]
+    );
+    assert_eq!(
+        fake.calls,
+        ["ast-outline", "ast-grep", "cgwalters-forge-misctool"]
+    );
     assert!(fake.installs.is_empty());
 }
 
@@ -340,11 +373,17 @@ fn old_commands_upgrade_and_newer_ones_are_left_alone() {
         ("ast-outline", "1.8.0"),
         ("uv", "0.13.1"),
         ("ast-grep", "0.51.0"),
+        ("cgwalters-forge-misctool", "0.2.0"),
     ]);
     assert!(install_tools(&tools(), &options(), &mut fake));
     assert_eq!(
         fake.take_lines(),
-        ["uv: present", "ast-outline: installed", "ast-grep: present"]
+        [
+            "uv: present",
+            "ast-outline: installed",
+            "ast-grep: present",
+            "cgwalters-forge-misctool: present"
+        ]
     );
     assert!(install_tools(&tools(), &options(), &mut fake));
     assert!(!fake.calls.iter().any(|program| program == "uv"));
@@ -371,6 +410,7 @@ fn installation_outcomes() {
                 "uv: failed (download failed)",
                 "ast-outline: failed (uv dependency unavailable)",
                 "ast-grep: installed",
+                "cgwalters-forge-misctool: installed",
             ],
         },
         Case {
@@ -379,7 +419,11 @@ fn installation_outcomes() {
             failures: &[],
             inert: false,
             ok: true,
-            lines: &["ast-outline: present", "ast-grep: installed"],
+            lines: &[
+                "ast-outline: present",
+                "ast-grep: installed",
+                "cgwalters-forge-misctool: installed",
+            ],
         },
         Case {
             name: "an archive failure fails the run",
@@ -390,6 +434,7 @@ fn installation_outcomes() {
             lines: &[
                 "ast-outline: present",
                 "ast-grep: failed (release checksum mismatch)",
+                "cgwalters-forge-misctool: installed",
             ],
         },
         Case {
@@ -401,6 +446,7 @@ fn installation_outcomes() {
             lines: &[
                 "ast-outline: present",
                 "ast-grep: failed (installed command does not meet minimum version)",
+                "cgwalters-forge-misctool: failed (installed command does not meet minimum version)",
             ],
         },
         Case {
@@ -409,7 +455,11 @@ fn installation_outcomes() {
             failures: &[("ast-grep", "curl failed\ntranscript")],
             inert: false,
             ok: false,
-            lines: &["ast-outline: present", "ast-grep: failed (curl failed)"],
+            lines: &[
+                "ast-outline: present",
+                "ast-grep: failed (curl failed)",
+                "cgwalters-forge-misctool: installed",
+            ],
         },
     ] {
         let mut fake = Fake::with(case.versions);
@@ -434,20 +484,57 @@ fn binary_entries_install_through_the_binary_method() {
     let mut fake = Fake::with(&[("ast-outline", "1.9.0"), ("ast-grep", "0.50.0")]);
     let tools = parse_manifest(&(manifest() + BINARY_ENTRY)).unwrap();
     assert!(install_tools(&tools, &options(), &mut fake));
-    assert_eq!(fake.installs, ["binary fixture"]);
+    assert_eq!(
+        fake.installs,
+        ["binary cgwalters-forge-misctool", "binary fixture"]
+    );
     assert_eq!(
         fake.lines,
         [
             "ast-outline: present",
             "ast-grep: present",
+            "cgwalters-forge-misctool: installed",
             "fixture: installed"
         ]
     );
 }
 
+#[test]
+fn misctool_upgrades_and_binary_failures_fail_the_run_without_retrying() {
+    for (failure, ok, status) in [
+        (None, true, "installed"),
+        (
+            Some("release checksum mismatch"),
+            false,
+            "failed (release checksum mismatch)",
+        ),
+    ] {
+        let mut fake = Fake::with(&[
+            ("ast-outline", "1.9.0"),
+            ("ast-grep", "0.50.0"),
+            ("cgwalters-forge-misctool", "0.0.9"),
+        ]);
+        if let Some(error) = failure {
+            fake.failures
+                .insert("cgwalters-forge-misctool".into(), error.into());
+        }
+        assert_eq!(install_tools(&tools(), &options(), &mut fake), ok);
+        assert_eq!(fake.installs, ["binary cgwalters-forge-misctool"]);
+        assert_eq!(
+            fake.lines,
+            [
+                "ast-outline: present".into(),
+                "ast-grep: present".into(),
+                format!("cgwalters-forge-misctool: {status}")
+            ]
+        );
+    }
+}
+
 /// Serves `bytes` for any download and extracts with `extract`, or with the
 /// real `unzip` and `tar` when it is `None`.
 struct Downloads {
+    url: String,
     bytes: Vec<u8>,
     extract: Option<Vec<u8>>,
     downloads: Vec<PathBuf>,
@@ -457,6 +544,7 @@ struct Downloads {
 impl Downloads {
     fn new(bytes: &[u8], extract: Option<&[u8]>) -> Self {
         Self {
+            url: "https://example.com/fixture".into(),
             bytes: bytes.to_vec(),
             extract: extract.map(<[u8]>::to_vec),
             downloads: Vec::new(),
@@ -468,7 +556,7 @@ impl Downloads {
 impl Host for Downloads {
     fn run(&mut self, program: &str, args: &[String], env: &Env) -> Result<Vec<u8>> {
         if program == "curl" {
-            assert!(args.ends_with(&["https://example.com/fixture".to_owned()]));
+            assert!(args.ends_with(std::slice::from_ref(&self.url)));
             assert!(args.windows(2).any(|w| w == ["--proto", "=https"]));
             let output = args.iter().position(|arg| arg == "--output").unwrap();
             let path = PathBuf::from(&args[output + 1]);
@@ -619,6 +707,29 @@ fn binary_downloads_verify_and_keep_the_old_binary_on_failure() {
 }
 
 #[test]
+fn misctool_pin_rejects_substituted_bytes_without_replacing_the_installed_tool() {
+    let dir = tempfile::tempdir().unwrap();
+    let tool = tools()
+        .into_iter()
+        .find(|tool| tool.name == "cgwalters-forge-misctool")
+        .unwrap();
+    let Source::Binary { url, .. } = &tool.source else {
+        panic!("misctool must use the binary method");
+    };
+    let published = dir.path().join(&tool.command);
+    fs::write(&published, b"old binary").unwrap();
+    let mut host = Downloads::new(b"substituted release", None);
+    host.url = url.clone();
+    let error = install_binary(&tool, dir.path(), &Vec::new(), &mut host).unwrap_err();
+    assert!(format!("{error:#}").contains("release checksum mismatch"));
+    assert_eq!(host.downloads.len(), 1);
+    assert!(host.downloads.iter().all(|path| !path.exists()));
+    assert!(host.extracted.is_empty());
+    assert_eq!(fs::read(&published).unwrap(), b"old binary");
+    assert_eq!(names(dir.path()), ["cgwalters-forge-misctool"]);
+}
+
+#[test]
 fn commands_are_bounded_in_time_and_output() {
     let sh = |script: &str, timeout: u64, limit: u64| {
         run_bounded(
@@ -665,6 +776,10 @@ fn install_tools_cli_reports_one_line_per_tool() {
         fs::set_permissions(&path, fs::Permissions::from_mode(0o755)).unwrap();
     };
     stub("ast-outline", "echo ast-outline 1.9.0");
+    stub(
+        "cgwalters-forge-misctool",
+        "echo cgwalters-forge-misctool 0.1.0",
+    );
     stub("curl", "echo offline >&2; exit 7");
     let run = || {
         Command::new(env!("CARGO_BIN_EXE_agenthome"))
@@ -687,7 +802,7 @@ fn install_tools_cli_reports_one_line_per_tool() {
         assert_eq!(output.status.success(), success, "{version}");
         assert_eq!(
             String::from_utf8(output.stdout).unwrap(),
-            format!("ast-outline: present\n{last}\n")
+            format!("ast-outline: present\n{last}\ncgwalters-forge-misctool: present\n")
         );
     }
 }
