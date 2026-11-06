@@ -15,9 +15,11 @@ controller:
 
 - Never name the agent, harness or model in a public body, and never add
   `Signed-off-by`; the executor appends the attribution footer itself.
-- Issue and PR bodies open with the ask or change in one or two sentences.
-  Keep the whole body under about 120 words unless it is a design doc. Leave
-  out restated context, verification logs and hedges.
+- Every issue and PR body opens with a short Executive summary section (the
+  ask or change, a few sentences). An optional More detail section follows,
+  at most a few paragraphs. Most detail belongs in the code, its comments
+  and commit messages, not the body. Leave out restated context, verification
+  logs and hedges.
 - Pace every pool by the health report's `pace` check: dispatch nothing to a
   pool it reports over. Mistral takes triage and research, never implement.
 - Plans put reusable pieces in independent components (secure-host,

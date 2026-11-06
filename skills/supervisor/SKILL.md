@@ -89,9 +89,11 @@ report the missing capability; do not turn it into an operator ask.
   public text; they are private or invite traffic upstream.
 - Write plain English without tortured LLM phrasing (tracker#1269); people
   read this text.
-- Issue and PR bodies open with the ask or change in one or two sentences.
-  Keep the whole body under about 120 words unless it is a design doc. Leave
-  out restated context, verification logs and hedges.
+- Every issue and PR body opens with a short Executive summary section (the
+  ask or change, a few sentences). An optional More detail section follows,
+  at most a few paragraphs. Most detail belongs in the code, its comments
+  and commit messages, not the body. Leave out restated context, verification
+  logs and hedges.
 - When pools are well behind pace, file and dispatch useful work
   (agent-board#660) instead of sitting in a quiet hold: unused allowance is
   lost.

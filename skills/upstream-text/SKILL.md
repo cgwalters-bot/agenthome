@@ -7,7 +7,7 @@ description: Rules for issue bodies, pull request descriptions and forge comment
 
 Keep PR descriptions and comments short and factual. The operator adds the human framing on nontrivial changes themselves; short bot text makes their edits visible as the human review, while long AI prose buries the signal.
 
-**Issue and PR bodies:** open with the ask or change in one or two sentences. Keep the whole body under about 120 words unless it is a design doc. Leave out restated context, verification logs and hedges.
+**Issue and PR bodies:** every body opens with a short Executive summary section (the ask or change, a few sentences). An optional More detail section follows, at most a few paragraphs. Most detail belongs in the code, its comments and commit messages, not the body. Leave out restated context, verification logs and hedges.
 
 **PR descriptions:** a brief what and why, one line on how it was verified, and for a nontrivial change an empty `<!-- LOGIN: context/rationale -->` line for the operator to fill (it renders invisibly if left), LOGIN being the operator's login. Add that line only when the run's environment names the operator's login; otherwise leave it out. No essays or restated diffs: if a reader cannot tell from the first two sentences what the change does, rewrite them.
 
