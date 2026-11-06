@@ -219,8 +219,9 @@ fn issue_and_pr_body_guidance_keeps_operator_reading_bounded() {
         let text = read(path).replace('\n', " ");
         let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
         for rule in [
-            "one or two sentences",
-            "whole body under about 120 words unless it is a design doc",
+            "short Executive summary section (the ask or change, a few sentences)",
+            "optional More detail section follows, at most a few paragraphs",
+            "Most detail belongs in the code, its comments and commit messages, not the body",
             "restated context, verification logs and hedges",
         ] {
             assert!(text.contains(rule), "{path} is missing: {rule}");
