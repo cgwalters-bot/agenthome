@@ -47,7 +47,7 @@ Never add a `Signed-off-by` trailer, and never remove one a commit already has.
 
 ## Pull request descriptions
 
-The same rules, shorter still. A single-commit PR's description can repeat the commit body or say less. A series gets a few sentences on the goal and how the commits get there, not a summary of each. Then, each on one line where the task asks for it: how it was verified, what review ran and what it left open, and what is left undone. If a reader cannot tell what the change does from the first two sentences, rewrite them.
+Open with the change in one or two sentences. Keep the whole body under about 120 words unless it is a design doc. Leave out restated context, verification logs and hedges. A single-commit PR's description can repeat the commit body or say less; a series states the goal, not a summary of each commit. Where the task asks for verification, review or unfinished work, give each one line, not a transcript.
 
 ## Fixes and review feedback
 

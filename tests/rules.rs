@@ -209,6 +209,26 @@ fn every_run_receives_the_commit_attribution_trailer() {
 }
 
 #[test]
+fn issue_and_pr_body_guidance_keeps_operator_reading_bounded() {
+    for path in [
+        "skills/upstream-text/SKILL.md",
+        "skills/commit-messages/SKILL.md",
+        "skills/supervisor/SKILL.md",
+        ".github/agentic-job/profiles/supervisor.md",
+    ] {
+        let text = read(path).replace('\n', " ");
+        let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
+        for rule in [
+            "one or two sentences",
+            "whole body under about 120 words unless it is a design doc",
+            "restated context, verification logs and hedges",
+        ] {
+            assert!(text.contains(rule), "{path} is missing: {rule}");
+        }
+    }
+}
+
+#[test]
 fn every_run_receives_the_pr_and_comment_footer_and_no_gist_advice() {
     let skill = read("skills/upstream-text/SKILL.md");
     assert!(skill.contains(&format!("`{FOOTER}`")));
