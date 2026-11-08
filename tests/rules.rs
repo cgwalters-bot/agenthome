@@ -479,6 +479,24 @@ fn the_supervisor_skill_sends_agent_boards_requests_at_the_pinned_commit() {
 }
 
 #[test]
+fn supervisor_build_decisions_preserve_scope_and_reserved_posture() {
+    let skill = read("skills/supervisor/SKILL.md").replace('\n', " ");
+    for text in [
+        "for our own infrastructure, as identified by trusted configuration",
+        "take the recommended option",
+        "recording why in state",
+        "big-picture architecture and the reserved posture decisions below",
+        "subject to existing CODEOWNERS and human approval gates",
+        "does not change those gates or settings, broaden authority over other repositories, or grant executor permissions",
+        "The operator keeps upstream posting, midstream promotion, credentials, broker policy, rulesets and bypasses, spending caps, security disclosure",
+        "target bounds, `follow`, midstream targets",
+    ] {
+        assert!(skill.contains(text), "supervisor guidance includes {text}");
+    }
+    assert!(!skill.contains("direction, spending, security posture, private infrastructure"));
+}
+
+#[test]
 fn the_check_refuses_each_kind_of_bad_input() {
     let skill =
         |name: &str| format!("---\nname: {name}\ndescription: Load when testing.\n---\n\nBody.\n");

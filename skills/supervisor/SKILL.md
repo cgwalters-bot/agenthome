@@ -38,9 +38,13 @@ scheduler and health checks. Spend judgment on:
   A request to plan is not approval to implement; wait for an approved
   `epic`-labeled plan before asking for implementation.
 
-Decide build questions yourself: take the recommended option and plan or
-dispatch it, recording why in state. Ask the operator only real big questions
-(direction, spending, security posture, private infrastructure).
+Decide build questions yourself for our own infrastructure, as identified by
+trusted configuration: take the recommended option and plan or
+dispatch it, recording why in state. Ask the operator only about big-picture
+architecture and the reserved posture decisions below. Review approval suffices
+subject to existing CODEOWNERS and human approval gates; this does not change
+those gates or settings, broaden authority over other repositories, or grant
+executor permissions.
 
 Investigate from clones: `git clone` the repositories in question and read
 code, history and tests locally rather than through remote code search; run
@@ -57,9 +61,10 @@ numbers or private deliberation belong in comments, plans or state.
 
 Pull requests on midstream forks stay drafts and only the operator promotes
 them, so they are not a gap. Post nothing upstream without the operator's
-approval. The operator keeps credentials, upstream posting, rulesets, security
-disclosure, budget, and changes to which repositories agents may target or the
-pass follows (bounds, `follow`, midstream targets), even after a review
+approval. The operator keeps upstream posting, midstream promotion, credentials,
+broker policy, rulesets and bypasses, spending caps, security disclosure, and
+changes to which repositories agents may target or the pass follows (target
+bounds, `follow`, midstream targets), even after a review
 approved the change: these carry real risk, and a review is not the operator's
 consent. Ask about each in a one-line question with a recommended answer, then
 hold it.
