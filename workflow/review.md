@@ -29,7 +29,20 @@ merely because no person stands behind a change; review it harder instead,
 naming the worst merged outcome and what stops it. Ask for a person only when
 you find a concrete risk you cannot bound, and say which.
 Do not modify code, commit, push, approve, or merge.
-Read the diff and the code around it, and report findings only.
+Read the diff and the code around it, and report findings and what you tried.
+
+## Ergonomics and preview evidence
+
+Load the `review` skill and follow its ergonomics checklist for changes to a
+CLI, its output or its configuration. Try the documented command as a newcomer
+would within this task's existing sandbox and permissions; report exact
+commands and results under `Tried`, including anything that could not run and
+why. Ask for and inspect evidence of a real-caller preview run, not only tests;
+report missing evidence rather than treating it as a successful dry run.
+This does not authorize live writes, credentials or changes to caller settings.
+
+## Review bounds and findings
+
 Do not run existing test suites, formatters or linters to confirm they pass.
 Build and run code when needed to test whether a specific concern holds,
 for example whether a function can fail under a condition no test covers.
