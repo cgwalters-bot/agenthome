@@ -18,6 +18,17 @@ Read the configured locked state issue's body first, then tracker's
 request. If any is unavailable, report the missing input rather than inventing
 state or health. Read linked evidence yourself; distinguish facts from inference.
 
+For each research or triage topic, usually an epic, read its linked findings
+document before investigating. Keep one durable document per topic: a gist via
+the run's document output when available, or a file in the repository that owns
+the work, linked under `Findings:` in the issue body. Extend or correct it in
+place with evidence (commits, PRs, run logs, file and line); never restate earlier
+findings, link them. Topic issue comments say what changed in at most five lines,
+plus the document link, not full reports. This read-only profile cannot write
+documents or edit topic issue bodies: report the missing capability when needed,
+not a long comment as a substitute. Keep the required state replacement and
+bounded action block; neither is a replacement for the topic's findings document.
+
 The goal is to stay near each pool's allowance by working every live epic,
 deciding build questions yourself and keeping `needs-human` small. A pool under
 its pace with free slots is a finding: name what holds its work and move it, or

@@ -8,9 +8,9 @@ You act as a bot account on behalf of a human operator, not as the operator. Thi
 
 ## Generating text
 
-Prefer simple, direct prose, especially when summarizing. Use emoji sparingly. Don't overuse bulleted lists or tables; a document that is mostly lists is too much.
+Prefer simple, direct prose, especially when summarizing. Use emoji sparingly. Don't overuse bulleted lists or tables; a document that is mostly lists is too much. **Descriptions are brief.** A commit message or pull request description states what changes and why in a few sentences a reader can take in at a glance. Details belong in code comments next to what they explain.
 
-**Descriptions are brief.** A commit message or pull request description states what changes and why in a few sentences a reader can take in at a glance. Details belong in code comments next to what they explain.
+**Durable findings:** every research, triage and session run uses one findings document per topic, usually an epic: a gist through document output when available, or a file in the repository that owns the work. Link it under `Findings:` in the issue body. Read it before investigating; extend or correct it in place with evidence (commits, PRs, run logs, file and line). Never restate earlier findings; link them. Issue comments say only what changed in at most five lines, plus the document link, not full reports. Use only authorized outputs; report missing document or issue-body update capabilities rather than bypassing write restrictions. Read-only subagents return evidence to the parent run, which owns the durable update.
 
 ## Invoking tools
 

@@ -230,13 +230,43 @@ fn issue_and_pr_body_guidance_keeps_operator_reading_bounded() {
 }
 
 #[test]
-fn every_run_receives_the_pr_and_comment_footer_and_no_gist_advice() {
+fn every_run_receives_the_pr_and_comment_footer() {
     let skill = read("skills/upstream-text/SKILL.md");
     assert!(skill.contains(&format!("`{FOOTER}`")));
     assert!(skill.contains("never name a model, provider or tool"));
-    // Runs have no gist output, and a gist linked from public text is public.
-    assert!(!Regex::new(r"(?i)\bgists?\b").unwrap().is_match(&skill));
-    assert!(skill.contains("on the thread in a collapsed `<details>` block"));
+    assert!(skill.contains("Text linked from a public thread is public too."));
+}
+
+#[test]
+fn findings_stay_in_one_durable_document_instead_of_issue_comments() {
+    for path in [
+        "opencode/AGENTS.md",
+        "opencode/CLAUDE.md",
+        "skills/upstream-text/SKILL.md",
+        "skills/supervisor/SKILL.md",
+        ".github/agentic-job/profiles/supervisor.md",
+    ] {
+        let text = read(path);
+        let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
+        for rule in [
+            "per topic",
+            "usually an epic",
+            "`Findings:`",
+            "before",
+            "in place",
+            "commits, PRs, run logs, file and line",
+            "five lines",
+            "document link",
+            "full reports",
+            "capabilit",
+        ] {
+            assert!(text.contains(rule), "{path} is missing: {rule}");
+        }
+    }
+    let skill = read("skills/upstream-text/SKILL.md");
+    assert!(skill.contains("gist through the run's document output"));
+    assert!(skill.contains("when available"));
+    assert!(skill.contains("No full reports in comments, including collapsed `<details>` blocks."));
 }
 
 // A run meets forge text outside its dispatch wrapper (linked issues, PR
