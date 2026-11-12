@@ -31,6 +31,21 @@ say exactly what was not tried and why. Report the commands, observed results
 and confusing or missing behavior under `Tried`; do not claim an unrun check
 passed. Use the trusted task's severity rules for findings.
 
+## Repository agent guidance
+
+When a PR changes a repository's `AGENTS.md`, flag growth beyond a screen or two
+and check that it:
+
+- starts by pointing to `README.md` for the project's purpose and usage;
+- names only one or two required hand-back recipes, leaving command details,
+  which to run and rough runtimes in `Justfile` recipes with short comments;
+- has no "Layout" or file-map sections;
+- keeps only non-inferable project constraints, non-default conventions and
+  hand-back expectations, linking existing docs rather than duplicating them.
+
+Suggest moving growing sections to existing docs or the Justfile. Apply the
+trusted task's severity rules; this is a review check, not a hard line-count gate.
+
 ## Real-caller preview evidence
 
 Ask for evidence that the change was run against a real caller in preview
