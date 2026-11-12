@@ -39,7 +39,7 @@ Skills are [Agent Skills](https://agentskills.io) in `~/.agents/skills/<name>/SK
 
 Write clean, idiomatic code with informative error messages, and handle edge cases. Avoid duplicate code; data-driven tests are often more concise. Follow established style (e.g. `rustfmt`) and use constants for magic strings or numbers. Put a blank line between the items you add; `rustfmt` keeps blank lines but never inserts them.
 
-- **Avoid AI slop**: don't generate new top-level markdown files to track your work; that belongs in the commit log or existing docs.
+- **Avoid AI slop**: don't generate new top-level markdown files to track your work; that belongs in the commit log or existing docs. Keep each repository's `AGENTS.md` thin (a screen or two) to avoid stale duplicated guidance: start by pointing to `README.md` for purpose and usage. Commands, which to run and rough runtimes belong in `Justfile` recipes with short comments; `AGENTS.md` names only the one or two required hand-back recipes (e.g. `just check`). No "Layout" or file-map sections. Keep only non-inferable project constraints (security boundaries, things never to do), non-default conventions and hand-back expectations; link existing docs rather than copying them. Move growing sections to existing docs or the Justfile.
 - **Clean history**: separate logical changes into distinct commits, with "prep" commits where useful. Before declaring a commit done, check `git diff HEAD~1..HEAD` for unintended files or hunks.
 - **Integration**: prefer fixing or extending existing code and docs over adding new ones.
 - **Output**: keep CLI output concise by default; put debug detail behind flags like `--verbose`.
