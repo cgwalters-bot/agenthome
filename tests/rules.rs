@@ -39,8 +39,7 @@ const FOOTER: &str = "Generated-by: https://github.com/cgwalters/#llms";
 const NOTICE: &str = "> This text is LLM generated.";
 
 // Markdown that is input to an agent, not a document for people, carries no
-// notice; everything else in this repository does. roles/ holds role prompts
-// and the agents rendered from them.
+// notice; everything else in this repository does. roles/ holds role agents.
 const NOTICE_EXEMPT: &str = r"(^|/)(AGENTS|CLAUDE|SKILL)\.md$|^workflow/|^\.github/|^roles/";
 
 // Login and homegit-tool patterns. A login followed by `-forge` is a link

@@ -45,38 +45,37 @@ The summary includes this digest. It binds the entire sample, limits and policie
 not just the current run's task. A changed task/check/config requires
 a new full comparison, never pooling the two. No budget is authorized by this file.
 
-## Rendered-role contract and authorized execution
+## Role configuration contract and authorized execution
 
-The shared role renderer (agenthome#50, "Shared role templates" in the top-level
-README) renders the `tiered` arm's role configuration with `just render-roles`:
-`roles/opencode/eval-tiered.json` for opencode and `roles/claude/agents/` for
-Claude Code; `just check-roles` is its drift check. This protocol references
-those artifacts rather than copying role prompts, concrete model IDs or tier
-mappings. The single-model arms' bundles have no renderer yet.
+The `tiered` arm's role configuration is edited directly ("Shared role agents"
+in the top-level README): `roles/opencode/eval-tiered.json` for opencode and
+`roles/claude/agents/` for Claude Code; `just check` lints them. This protocol
+references those artifacts rather than copying role prompts, concrete model IDs
+or tier mappings. The single-model arms' bundles do not exist yet.
 
 A frozen `configuration` contains `configRevision`, `harnessRevision` (full
-commits), `roleInterface` (pinned renderer/resolver interface link), `environment`
+commits), `roleInterface` (pinned link to the role configuration), `environment`
 (immutable image/toolchain identity), and `arms`. Each of `single-strong`,
 `single-cheap`, `tiered` has `{artifact, sha256, resolvedModels}`.
-`artifact` links to the complete rendered configuration bundle; `resolvedModels`
+`artifact` links to the complete configuration bundle; `resolvedModels`
 is a canonical serialized role-to-resolved-model/version map, not aliases;
 `configuration.costBasis` is one common `{artifact, sha256}` pin covering the
 price table/currency/date and token/cache charging semantics for all arms, or
 exactly `{unavailable: "reason"}`. Do not mix billed baseline costs with estimated
 candidate costs; normalize all arms to the common basis or declare costs
 unavailable. Each run repeats that same cost-basis object. Do not copy mappings into this
-protocol. Keep the base config revision common; the per-arm render digest captures
+protocol. Keep the base config revision common; the per-arm bundle digest captures
 the intentional arm difference. Strong and cheap each use one resolved model
 throughout; tiered uses the shared explore-plan-execute role configuration.
 
 For an authorized research run:
 
-1. Pin the merged renderer/resolver and harness, render the three bundles through
-   their documented interface, run renderer drift checks and archive outputs and
+1. Pin the configuration revision and harness, assemble the three bundles from
+   the checked-in files at a revision where `just check` passes, and archive them and
    resolved model maps. Keep ordinary hosted direct-worker settings unchanged;
    tiered is an opt-in research configuration only.
 2. Verify the actual runner's installation contract, including agentic-job#1367's
-   missing source-subagent support. Rendered custom agents are **not** necessarily
+   missing source-subagent support. Custom role agents are **not** necessarily
    installed. Prove the selected runner loads each role file and model setting.
    If unavailable, stop and record the dependency as pending. Do not assume
    acp-drive can spawn arbitrary tool/model children. It may drive supported

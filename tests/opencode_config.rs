@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use agenthome::{read_jsonc, tiers::render_opencode};
+use agenthome::read_jsonc;
 use anyhow::{Context, Result, ensure};
 use serde_json::{Value, json};
 
@@ -159,16 +159,4 @@ fn the_check_refuses_configurations_a_run_would_refuse_or_that_leak_an_address()
         edit(&mut bad);
         assert!(check_opencode(&config, &bad).is_err(), "runner edit {i}");
     }
-}
-
-#[test]
-fn the_rendered_configuration_meets_the_wrapper_rules() {
-    let rendered = render_opencode(
-        &read("prompt-tiers.json"),
-        "praxis",
-        &read("opencode/opencode.json"),
-        &read("opencode/opencode-runner.json"),
-    )
-    .unwrap();
-    check_opencode(&rendered, &json!({})).unwrap();
 }

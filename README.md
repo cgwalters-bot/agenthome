@@ -92,7 +92,8 @@ issue for that follow-up yet.
 The rules are written for opencode runs and Claude runs. opencode runs load
 `AGENTS.md`; the agentic-job adapter for Claude loads only `CLAUDE.md`.
 `opencode/CLAUDE.md` is a copy that `just check` keeps byte-identical, so edit
-`opencode/AGENTS.md` and run `just render-roles` to copy it over.
+`opencode/AGENTS.md` and copy it over with
+`cp opencode/AGENTS.md opencode/CLAUDE.md`.
 Both need the run's `agent-config-path` set to `opencode`. A Claude
 run gets the rules only once agentic-job dispatch forwards the configuration
 repository for Claude, as it does for opencode and Vibe. Vibe runs do not get
@@ -113,45 +114,31 @@ Role assignments preserve the currently working model choices, including
 `architect` using `sol`, rather than implicitly promoting it to `astra`.
 Model identifiers belong in this data or tool configuration, not role prompts.
 
-This check prevents a misspelled selection from choosing an unconfigured
-model and a fallback cycle from hanging resolution. The resolver
+`just check` (`tests/config.rs`) prevents a misspelled selection from choosing
+an unconfigured model and a fallback cycle from hanging resolution. It
 checks every edge, including those behind available models, and walks each
 path at most once per tier. Unknown pools, tiers, undeclared models, cycles
-and paths without terminal models fail with an error. This is offline
-configuration validation, not broker enforcement or a model-availability probe.
+and paths without terminal models fail. The role assignments must resolve to
+the models `opencode/opencode.json` and `opencode/opencode-runner.json`
+already configure, so the manifest describes the current configuration rather
+than changing it. This is offline configuration validation, not broker
+enforcement or a model-availability probe. Nothing reads the manifest at run
+time; tiered hosted runs and an agentic-job#1367 consumer are not wired up.
 
-Nothing invokes the renderer by default. To inspect the opt-in artifact, run
-`cargo run --locked -- render-prompt-tiers praxis`. It writes deterministic JSON to
-stdout: one effective `opencode.json` with the unattended runner profile
-merged in and the manifest's role assignments applied. Errors produce a
-nonzero exit and no artifact. The committed configuration, context/input
-limits, inert proxy placeholders and runtime defaults remain unchanged.
-`just check` includes table-driven resolver tests and asserts that rendering
-the current manifest preserves the entire effective configuration.
+### Shared role agents
 
-For the proposed agentic-job#1367 contract, agenthome owns the manifest and
-renderer; agentic-job consumes the rendered tool configuration, not a second
-`[models.tiers]` table or a new binary tier parser. A future integration would
-render outside the run, stage the result as `opencode.json` alongside the
-existing rules and skills, and omit the separate runner override because it
-is already merged. Its existing proxy substitution and broker enforcement
-remain responsible for credentials and authorization. This change does not
-wire up that consumer, enable tiered hosted runs, or modify tracker. There
-is no new caller setting to enable here. If an operator later stages a
-rendered configuration for opencode, quit and restart opencode to load it.
-
-### Shared role templates
-
-`roles/templates/` holds one prompt per role of the tiered chain: explore,
-plan, execute-lead, worker and review. Each names a tier from
-`prompt-tiers.json` and an access level, never a model. `just render-roles`
-(`src/render.rs`) resolves the tiers with the resolver above and
-writes the same text, under the names `role-explore` and so on, in two forms:
-Claude Code Markdown agents in `roles/claude/agents/`, and opencode agent
-entries in `roles/opencode/eval-tiered.json`, an opt-in profile for the
-`tiered` arm of the evaluation below that makes `role-execute-lead` the
-default agent. It also writes `opencode/CLAUDE.md`. `just check` runs
-`just check-roles`, which refuses outputs that differ from a fresh render.
+The tiered chain has five roles: explore, plan, execute-lead, worker and
+review, named `role-explore` and so on. Each is written twice, and the two
+are edited together: as a Claude Code Markdown agent in
+`roles/claude/agents/`, and as an opencode agent entry in
+`roles/opencode/eval-tiered.json`, an opt-in profile for the `tiered` arm of
+the evaluation below that makes `role-execute-lead` the default agent. Edit
+these files directly. `just check` requires the same description and prompt
+in both, each role's access level and prompt tier as `tests/config.rs` pins
+them, the opencode model that tier resolves to in `prompt-tiers.json`'s
+`praxis` pool, no model or tier named in a prompt,
+and the formatting the files have now (the profile as `JSON.stringify(value,
+null, 2)`).
 
 The prefix keeps the roles from replacing opencode's built-in `plan` and
 `explore`, Claude Code's own subagents, or agentic-job's embedded
@@ -171,7 +158,7 @@ instructions and opencode's `opencode.json` and `opencode-runner.json`; it has
 no source-subagent support, so the only subagent a run gets is its embedded
 `diff-reviewer`. #1367's plan would read a configuration repository's root
 `agents/*.md` and install them into `~/.claude/agents/` and
-`~/.config/opencode/agents/` for the current harness. The rendered agents
+`~/.config/opencode/agents/` for the current harness. The role agents
 stay out of a root `agents/` on purpose: one file would then reach both
 tools, and opencode 1.18.35 rejects a Claude `tools: Read, Grep` line, as its
 `tools` is a map. Adopting them is a separate change once that support lands.
@@ -182,7 +169,7 @@ The eval profile reaches a run only if a caller stages it as
 
 `eval/README.md` defines the opt-in three-arm historical evaluation protocol and
 the input format of the offline `summarize-eval` subcommand. The sample still needs
-authorized sizing evidence and a runner that installs the rendered roles. No research runs or
+authorized sizing evidence and a runner that installs the role agents. No research runs or
 workflow changes are enabled. Its synthetic fixture tests run in `just check`.
 
 ## Tracker supervisor profile
