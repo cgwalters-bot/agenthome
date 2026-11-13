@@ -27,6 +27,14 @@ enum Command {
     CheckInstall,
     /// Summarize offline evaluation runs against their frozen manifest.
     SummarizeEval { manifest: PathBuf, runs: PathBuf },
+    /// Check dated allocation/enforcement declarations offline; never launches inference.
+    CheckEvalReadiness { evidence: PathBuf },
+    /// Print an opt-in evaluation configuration pair; never installs it.
+    EvalBundle {
+        arm: String,
+        #[arg(long, default_value = "praxis")]
+        pool: String,
+    },
 }
 
 fn install_tools(root: PathBuf) -> Result<bool> {
@@ -94,6 +102,26 @@ fn main() -> Result<ExitCode> {
             let summary = eval::summarize(&eval::read_json(&manifest)?, &eval::read_json(&runs)?)
                 .context("eval")?;
             println!("{}", agenthome::pretty_json(&summary)?);
+        }
+        Command::CheckEvalReadiness { evidence } => {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)?
+                .as_secs();
+            let result = agenthome::readiness::check(&eval::read_json(&evidence)?, now)?;
+            // Money uses exact integer microdollars, not JavaScript f64 spelling.
+            println!("{}", serde_json::to_string_pretty(&result)?);
+        }
+        Command::EvalBundle { arm, pool } => {
+            let read = |path: &str| agenthome::read_jsonc(&root.join(path));
+            let bundle = agenthome::tiers::eval_bundle(
+                &read("prompt-tiers.json")?,
+                &read("opencode/opencode.json")?,
+                &read("opencode/opencode-runner.json")?,
+                &read("roles/opencode/eval-tiered.json")?,
+                &pool,
+                &arm,
+            )?;
+            println!("{}", agenthome::pretty_json(&bundle)?);
         }
     }
     Ok(ExitCode::SUCCESS)

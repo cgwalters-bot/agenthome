@@ -51,7 +51,25 @@ The `tiered` arm's role configuration is edited directly ("Shared role agents"
 in the top-level README): `roles/opencode/eval-tiered.json` for opencode and
 `roles/claude/agents/` for Claude Code; `just check` lints them. This protocol
 references those artifacts rather than copying role prompts, concrete model IDs
-or tier mappings. The single-model arms' bundles do not exist yet.
+or tier mappings. `cargo run --locked -- eval-bundle ARM` prints a JSON object
+containing complete `opencode.json` and `opencode-runner.json` documents for
+`single-strong`, `single-cheap` or `tiered`. It does not write/install files or
+launch anything. The shared resolver validates `prompt-tiers.json` and the model
+catalogue (only `--pool praxis` is currently supported). Single-model bundles
+retain ordinary direct-worker prompts/permissions and set every configured and
+built-in agent, including the embedded reviewer's inline override, to resolved
+sol or luna. Tiered retains the shared role prompts and resolves their model map.
+Provider addresses/keys remain the checked-in placeholders: the harness must
+replace them from its environment. No inference address is compiled into tooling.
+
+These are opt-in configuration artifacts, not proof of actual upstream model
+versions or delivery. An authorized harness must split the pair into a pinned
+configuration source, select the matching lead model, load the runner profile,
+and archive the final merged files after all harness-generated agents/overrides.
+Verify that even internal agents and the embedded reviewer use the intended
+model; generated workers must not silently replace custom prompts. Ordinary
+`opencode/` files are unchanged. Restart opencode after selecting a new bundle;
+running sessions retain their loaded configuration.
 
 A frozen `configuration` contains `configRevision`, `harnessRevision` (full
 commits), `roleInterface` (pinned link to the role configuration), `environment`
@@ -74,8 +92,9 @@ For an authorized research run:
    the checked-in files at a revision where `just check` passes, and archive them and
    resolved model maps. Keep ordinary hosted direct-worker settings unchanged;
    tiered is an opt-in research configuration only.
-2. Verify the actual runner's installation contract, including agentic-job#1367's
-   missing source-subagent support. Custom role agents are **not** necessarily
+2. Verify the actual runner's installation contract (see the pinned inspection
+   in [the report](report.md#current-runner-contract-and-external-prerequisites)).
+   Custom role agents are **not** necessarily
    installed. Prove the selected runner loads each role file and model setting.
    If unavailable, stop and record the dependency as pending. Do not assume
    acp-drive can spawn arbitrary tool/model children. It may drive supported
@@ -94,6 +113,59 @@ For an authorized research run:
    Both inputs are JSON documents; RUNS is an array, not a partial JSONL stream.
    Malformed/truncated JSON is rejected, not silently repaired. No commands from
    either document are executed. `just check` exercises synthetic fixtures offline.
+
+### Offline allocation evidence check
+
+The concrete spending threat is treating stale allocation, a double-reserved
+balance or post-reply/parent-only accounting as a hard no-new-spend bound. The
+opt-in `cargo run --locked -- check-eval-readiness EVIDENCE.json` rejects missing,
+stale or inconsistent declarations before any inference. This is one offline
+consistency mechanism, **not** a launcher, allocator, reservation service, or
+authentication of an evidence author's claims. It shares the summarizer's 4 MiB
+input bound, accepts exactly 54 cells, and does fixed-size budget arithmetic.
+Invalid input exits nonzero. A successful result is `evidence-consistent` with
+`inferenceAuthorized: false`; independent evidence review and all other protocol
+gates still apply. No default command or workflow invokes it.
+
+Version 1 input has these required fields (unknown fields are rejected):
+
+- `version: 1`, `pool: "openai"`, and full lowercase 40-hex `harnessRevision`.
+- `authorization`, `capacityEvidence`, `reservationEvidence`, and
+  `enforcement.evidence`: each `{artifact, sha256}` with a bounded HTTPS link and
+  lowercase 64-hex digest of archived nonsecret evidence. No query strings,
+  credentials or fragments; archive issue authorization text as an artifact
+  rather than passing a comment URL. The checker does not fetch links or verify
+  their bytes. A reviewer must retrieve, hash and authenticate them independently.
+- `observedAt`, `windowStart`, `windowEnd`, `validUntil`: integer Unix seconds.
+  The CLI uses the current system clock, not an input override. Observations must
+  be in the current accounting window, no more than 24 hours old and not future;
+  reservation validity cannot extend beyond the reset/window end. The entire
+  aggregate wall-time budget must fit before expiry (conservatively serial).
+- `allocationUsdMicros`, `spentUsdMicros`, `otherCommitmentsUsdMicros`,
+  `reservationUsdMicros`: nonnegative integer millionths of USD, not model prices.
+  Other commitments exclude this evaluation reservation. Reservation must fit
+  allocation minus spending minus other commitments, without reset/top-up credit.
+- `cells: 54`, `overhead`, `enforcement.aggregate`, `enforcement.perCell`.
+  Each budget is `{usdMicros, tokens, turns, wallSeconds}` with positive integers.
+  Per-cell ceilings are the protocol limits above. Aggregate must cover 54 times
+  each per-cell limit plus overhead, and its dollars must fit the reservation.
+  Overhead conservatively reserves sizing, probes and priming separately; priming
+  must **also** remain within each measured cell's limits. Overflows are errors.
+- `enforcement.allChildren: true`, `phases: ["sizing", "probes", "priming", "cells"]`,
+  `admission: "before-request-hard-cap"`, `externalDeadline: true`,
+  `automaticTopups: false`. These are claims the linked enforcement evidence must
+  demonstrate for aggregate and per-cell dollars, tokens, turns and time, including
+  all children. A request-count cap or after-reply cost watcher alone cannot qualify.
+
+`tests/readiness.rs` contains synthetic examples and rejection cases, not actual
+capacity evidence. Obtain a dated, immutable accounting snapshot and reservation
+receipt from the existing allocation authority, plus the pinned enforcement
+configuration and independent boundary tests. Check the net balance, exclusive
+reservation and all four dimensions against those artifacts before using this
+command. No supported remaining-allocation/reservation interface was established
+in the inspected runner; [the report](report.md) records the external follow-up.
+Do not fabricate a passing document from configured prices or this session's
+ability to make requests.
 
 ## Fair comparison and predeclared rule
 

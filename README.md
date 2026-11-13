@@ -152,7 +152,7 @@ Code subagents cannot start subagents, so the lead works there only as the
 main agent. `opencode/opencode-runner.json` keeps its direct-worker policy.
 
 Installation contract with agentic-job#1367: nothing delivers these files to
-runs yet. From a configuration repository, agentic-job (main at 0eb1e4f)
+runs by default. From a configuration repository, agentic-job (main at 0eb1e4f)
 installs only the root `skills/` tree and, from `config-path`, the
 instructions and opencode's `opencode.json` and `opencode-runner.json`; it has
 no source-subagent support, so the only subagent a run gets is its embedded
@@ -165,12 +165,21 @@ tools, and opencode 1.18.35 rejects a Claude `tools: Read, Grep` line, as its
 The eval profile reaches a run only if a caller stages it as
 `opencode-runner.json`. No caller does this.
 
+The [current pinned contract inspection](eval/report.md#current-runner-contract-and-external-prerequisites)
+supersedes that historical harness snapshot: inline profiles can be staged, but
+source `agents/*.md` bodies are still not installed and actual role/model execution
+is unproved. `eval-bundle` emits complete opt-in strong/cheap/tiered config pairs
+using the shared tier resolver; it does not install or select them.
+
 ## Offline role evaluation
 
 `eval/README.md` defines the opt-in three-arm historical evaluation protocol and
 the input format of the offline `summarize-eval` subcommand. The sample still needs
 authorized sizing evidence and a runner that installs the role agents. No research runs or
 workflow changes are enabled. Its synthetic fixture tests run in `just check`.
+The opt-in `check-eval-readiness` command checks dated allocation/reservation and
+child-inclusive enforcement declarations offline. It grants no spending authority;
+see the [input contract](eval/README.md#offline-allocation-evidence-check).
 
 ## Tracker supervisor profile
 
