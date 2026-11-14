@@ -6,8 +6,15 @@ Agent configuration for agentic-job runs: per-agent settings and AGENTS.md
 
 ## Tooling
 
-The recipes run one Rust crate, `agenthome` (`cargo run -- --help` lists its
-subcommands). They build it from this checkout with Cargo. Building it requires Rust
+Configuration is edited directly in the checked-in files; no renderer or build
+step is needed. Run `just check-config` (or `python3 tests/check_config.py`) with
+Python 3.9 or later to lint the configuration and run its positive and negative
+fixtures. This uses only the standard library, without Cargo, downloads, package
+installation or network schema fetching.
+
+The installer and offline eval commands still use the Rust crate, `agenthome`
+(`cargo run -- --help` lists its subcommands). The recipes build it from this
+checkout with Cargo. Building it requires Rust
 1.85 or later; the first run fetches the locked crates from crates.io. The
 binary reads its inputs from the checkout it was built from: it is not a
 relocatable release artifact. No JavaScript is left, and `just check` fails
@@ -38,15 +45,16 @@ uv is bootstrapped only when ast-outline needs to be installed and uv is missing
 too old. Commands and downloads have time/output limits, with no retry loop.
 Failures produce a nonzero exit and one status line per attempted tool.
 
-`just check` runs `cargo fmt --check`, clippy with warnings denied and the
-offline tests (archive fixtures also require zip).
+`just check` runs `just check-config`, `cargo fmt --check`, clippy with warnings
+denied and the installer/eval offline tests (archive fixtures also require zip).
 `just check-install` runs the installer twice against the network and asserts
 that the second run reports only present tools. The separate agentic-job
 integration must invoke installation outside its sandbox and pass the PATH in.
-Its `[setup.tools]` runs `just install-tools` in a checkout of a pinned commit,
-so a pin at or after the Rust port needs Cargo in place of Node on the runner
-(through `setup.packages` or the image); Cargo builds the installer within the
-recipe's time limit, before network lockdown.
+Caller provisioning through ordinary setup steps or images is a later slice of
+agenthome#76, as are eval relocation and final Cargo removal. Do not restore
+agentic-job's rejected `[setup.tools]` mechanism. The installer still needs Cargo
+on the runner and builds before network lockdown; this slice does not remove it
+or change the Check workflow's opt-in installation coverage.
 
 The root `AGENTS.md` guides work on this repository only. Its Code navigation
 paragraph is copied into `opencode/AGENTS.md` (the file deployed to opencode's
@@ -65,7 +73,7 @@ The ast-explore skill is copied from `cgwalters-bot/homegit`,
 `opencode-runner.json` (the unattended-run profile merged over it) for
 agentic-job runs: set the run's `agent-config-path` to `opencode`, and its
 configuration repository and ref through the caller's own variables. The
-provider address and key are placeholders a run replaces; `just check`
+provider address and key are placeholders a run replaces; `just check-config`
 enforces the placeholders, since this repository is public.
 
 The runner follows the review procedure in the skill named by a task, such as
@@ -114,7 +122,7 @@ Role assignments preserve the currently working model choices, including
 `architect` using `sol`, rather than implicitly promoting it to `astra`.
 Model identifiers belong in this data or tool configuration, not role prompts.
 
-`just check` (`tests/config.rs`) prevents a misspelled selection from choosing
+`just check-config` (`tests/check_config.py`) prevents a misspelled selection from choosing
 an unconfigured model and a fallback cycle from hanging resolution. It
 checks every edge, including those behind available models, and walks each
 path at most once per tier. Unknown pools, tiers, undeclared models, cycles
@@ -133,12 +141,18 @@ are edited together: as a Claude Code Markdown agent in
 `roles/claude/agents/`, and as an opencode agent entry in
 `roles/opencode/eval-tiered.json`, an opt-in profile for the `tiered` arm of
 the evaluation below that makes `role-execute-lead` the default agent. Edit
-these files directly. `just check` requires the same description and prompt
-in both, each role's access level and prompt tier as `tests/config.rs` pins
+these files directly. `just check-config` requires the same description and prompt
+in both, each role's access level and prompt tier as `tests/check_config.py` pins
 them, the opencode model that tier resolves to in `prompt-tiers.json`'s
 `praxis` pool, no model or tier named in a prompt,
 and the formatting the files have now (the profile as `JSON.stringify(value,
 null, 2)`).
+
+The standalone tests retain the invariant test names from the former Rust
+configuration suites. Their mutation groups cover all 32 role/tier fixtures,
+9 provider and 3 runner fixtures, and 25 standing-rule fixtures, in their original
+order. The two shared JSON.stringify number/key tests remain in `tests/json.rs`
+with the Rust eval serializer; neither that serializer nor the eval digest changed.
 
 The prefix keeps the roles from replacing opencode's built-in `plan` and
 `explore`, Claude Code's own subagents, or agentic-job's embedded
