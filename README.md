@@ -12,7 +12,7 @@ Python 3.9 or later to lint the configuration and run its positive and negative
 fixtures. This uses only the standard library, without Cargo, downloads, package
 installation or network schema fetching.
 
-The installer and offline eval commands still use the Rust crate, `agenthome`
+The offline eval command still uses the Rust crate, `agenthome`
 (`cargo run -- --help` lists its subcommands). The recipes build it from this
 checkout with Cargo. Building it requires Rust
 1.85 or later; the first run fetches the locked crates from crates.io. The
@@ -22,39 +22,52 @@ if a `.js`, `.mjs` or `.cjs` file comes back.
 
 ## Navigation tools
 
-Run `just install-tools` explicitly to install the tools in `tools.toml`.
-Nothing installs by default. Requires just, Cargo, curl, tar and unzip on Linux
-x86_64. Add `$HOME/.local/bin` to the caller's `PATH` before launching agents;
-the installer uses that path internally but cannot alter its parent's environment.
-Workflow inputs don't select tool sources or versions: the checked-in manifest sets
-them. Existing commands at or above the minimum version are left alone;
-older commands in the user-local prefix may be replaced.
+Callers provision tools through their own setup steps or images and pass an
+explicit `PATH` before launching agents. Nothing in this repository installs
+tools on an agent's behalf. When ast-outline and ast-grep are absent, use `rg`
+and scoped reads; do not retry or install missing tools.
 
-The manifest is TOML with a fixed schema: only `[[tools]]` tables are allowed.
-Unknown keys and keys that belong to another method are rejected rather than
-ignored. The uv and ast-grep release archives are pinned by SHA-256, as is any
-single-file release binary installed with the `binary` method. ast-outline is
-installed with `uv tool install --no-build`, `--constraints` from
-`constraints/ast-outline.txt` (every resolved package at an exact version) and
-a fixed `--exclude-newer` date, so a later upload to PyPI cannot change what is
-installed and no sdist build runs. Tools already present at the minimum version,
-including earlier unpinned installs, are left as they are. uv ignores hashes in that constraints file,
-so the wheels themselves are trusted as PyPI served them before that date.
-This opt-in installation is not a sandbox for untrusted packages.
-uv is bootstrapped only when ast-outline needs to be installed and uv is missing or
-too old. Commands and downloads have time/output limits, with no retry loop.
-Failures produce a nonzero exit and one status line per attempted tool.
+The Check workflow demonstrates ordinary Linux x86_64 caller setup in a
+job-local prefix, without privileges or credentials. It retains reviewed release
+SHA-256 pins for ast-grep 0.50.0, uv 0.13.1 and cgwalters-forge-misctool 0.1.0,
+rejects checksum mismatches before extraction or execution, and bounds downloads
+and provisioning. ast-outline 1.9.0 uses `uv tool install --no-build`, the full
+`constraints/ast-outline.txt` and `--exclude-newer 2026-10-21T00:00:00Z`.
+No sdist build runs; uv ignores hashes in constraints, so wheels remain trusted
+as PyPI served them before that cutoff. This is not a package sandbox.
 
 `just check` runs `just check-config`, `cargo fmt --check`, clippy with warnings
-denied and the installer/eval offline tests (archive fixtures also require zip).
-`just check-install` runs the installer twice against the network and asserts
-that the second run reports only present tools. The separate agentic-job
-integration must invoke installation outside its sandbox and pass the PATH in.
-Caller provisioning through ordinary setup steps or images is a later slice of
-agenthome#76, as are eval relocation and final Cargo removal. Do not restore
-agentic-job's rejected `[setup.tools]` mechanism. The installer still needs Cargo
-on the runner and builds before network lockdown; this slice does not remove it
-or change the Check workflow's opt-in installation coverage.
+denied and the offline eval/serializer tests. CI separately provisions tools and
+checks their exact versions and structural navigation. No generic installer or
+manifest interface remains. Do not restore agentic-job's rejected `[setup.tools]`
+mechanism. Eval relocation and final Cargo/tracker package removal remain later
+slices of agenthome#76; this does not complete that issue.
+
+### Installer caller audit (2026-11-14)
+
+Refreshed the [earlier inventory](https://github.com/cgwalters-forge/agenthome/issues/76#issuecomment-6779099295)
+against agenthome `4e68032821d38fa0f49601fd4882c68f4afd3bbe` and current
+default branches. The only active `check-install` caller was this repository's
+Check workflow; it now owns setup directly. The Justfile wrappers, CLI variants,
+installer-only tests and installation instructions were the other local
+`install-tools` references; they are removed in this slice.
+
+Tracker at `595cc08ed43c4c5245059ffe11265172b9a0d7f7` has only commented
+`setup.tools` examples in `.github/agentic-job/hosted.toml:70–73` and
+`acp-experiment.toml:71–74`, not active calls. Their agenthome revision
+`9b43eb81e1266ec762a6c49a4e31fb6b4ff3e0e0` is a historical pin, not evidence
+of a current deployment. Agentic-job at
+`df6134e1009b8774c264de440028a4e324e43711` refuses `setup.tools`
+(`crates/agentic-job/src/config/mod.rs:309–313`); its
+`docs/dispatch.md:376–393` discusses the former interface, not an active call.
+Agent-board at `157fff2c117c6ea1ea59af2b8517963baa806d43` has no active
+agenthome installer reference. Their workflows' Cargo invocations build their
+own programs, not agenthome. Configuration/profile consumers do not require
+the removed CLI. No active external dependency was found in those default
+branches; other branches and deployed revisions remain unverified.
+
+PR #87's draft and human-approval hold are unchanged. This slice neither runs
+paid evals/hosted role probes nor changes canonical roles or model routing.
 
 The root `AGENTS.md` guides work on this repository only. Its Code navigation
 paragraph is copied into `opencode/AGENTS.md` (the file deployed to opencode's

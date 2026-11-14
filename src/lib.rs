@@ -4,7 +4,6 @@ use anyhow::{Context, Result};
 use serde_json::{Map, Value};
 
 pub mod eval;
-pub mod install;
 
 /// The repository uses whole-line JSON comments, not general JSONC.
 pub fn parse_jsonc(text: &str) -> Result<Value> {

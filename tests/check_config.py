@@ -606,7 +606,7 @@ class RulesTests(unittest.TestCase):
         self.assertRegex(frontmatter(skill)["description"],
                          "when ast-outline and ast-grep are on PATH.*otherwise use rg")
         body = normalized(skill.split("---\n", 2)[2])
-        for phrase in ("When `ast-outline` and `ast-grep` are on PATH", "`just install-tools`",
+        for phrase in ("When `ast-outline` and `ast-grep` are on PATH", "provisioned by the caller",
                        "Otherwise use `rg` and scoped reads", "do not retry or install the missing tools"):
             self.assertIn(phrase, standing)
             self.assertIn(phrase, body)

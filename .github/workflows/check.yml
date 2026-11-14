@@ -7,8 +7,45 @@ jobs:
     # The runner image's stable Rust toolchain, with rustfmt and clippy;
     # Cargo.toml's rust-version says what the code needs.
     runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    env:
+      TOOL_PREFIX: ${{ runner.temp }}/navigation-tools
+      UV_TOOL_DIR: ${{ runner.temp }}/navigation-tools/uv-tools
+      UV_TOOL_BIN_DIR: ${{ runner.temp }}/navigation-tools/bin
+      UV_PYTHON_DOWNLOADS: never
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: extractions/setup-just@f8a3cce218d9f83db3a2ecd90e41ac3de6cdfd9b # v3
       - run: just check
-      - run: just check-install
+      # Caller-owned provisioning, not an agenthome installation interface.
+      # Checksums reject substituted releases; time and size caps bound stalled
+      # or oversized responses before verification can reject their contents.
+      - name: Fetch pinned releases
+        timeout-minutes: 3
+        run: |
+          mkdir -p "$TOOL_PREFIX/bin" "$TOOL_PREFIX/downloads"
+          curl --fail --location --silent --show-error --connect-timeout 15 --max-time 60 --max-filesize 134217728 --output "$TOOL_PREFIX/downloads/ast-grep.zip" https://github.com/ast-grep/ast-grep/releases/download/0.50.0/app-x86_64-unknown-linux-gnu.zip
+          curl --fail --location --silent --show-error --connect-timeout 15 --max-time 60 --max-filesize 134217728 --output "$TOOL_PREFIX/downloads/uv.tar.gz" https://github.com/astral-sh/uv/releases/download/0.13.1/uv-x86_64-unknown-linux-gnu.tar.gz
+          curl --fail --location --silent --show-error --connect-timeout 15 --max-time 60 --max-filesize 134217728 --output "$TOOL_PREFIX/downloads/misctool" https://github.com/cgwalters-forge/misctool/releases/download/v0.1.0/cgwalters-forge-misctool
+      - name: Verify and unpack releases
+        working-directory: ${{ runner.temp }}/navigation-tools/downloads
+        run: |
+          printf '%s\n' '0fd3f489639abb8465a914b74b8779171577582318d8a940d00399f59dba81c5  ast-grep.zip' 'eadd9d27c134ab5ac1ffd4473b97a741407f3ea238288f03121fc4deddf90220  uv.tar.gz' 'd30c074c86cde1002a6cdcce6b218e65f0d39a8de859b1508a0268a8199cb59a  misctool' | sha256sum --check --strict
+          unzip -j ast-grep.zip ast-grep -d "$TOOL_PREFIX/bin"
+          tar -xzf uv.tar.gz --strip-components=1 -C "$TOOL_PREFIX/bin" uv-x86_64-unknown-linux-gnu/uv
+          install -m 755 misctool "$TOOL_PREFIX/bin/cgwalters-forge-misctool"
+          printf '%s\n' "$TOOL_PREFIX/bin" >> "$GITHUB_PATH"
+      # No sdists or later uploads: preserve the reviewed resolution and cutoff.
+      - name: Provision ast-outline
+        timeout-minutes: 3
+        run: timeout 150 uv tool install --no-build --constraints constraints/ast-outline.txt --exclude-newer 2026-10-21T00:00:00Z 'ast-outline==1.9.0'
+      - name: Smoke check pinned tools
+        timeout-minutes: 1
+        run: |
+          test "$(ast-grep --version)" = 'ast-grep 0.50.0'
+          test "$(uv --version)" = 'uv 0.13.1 (x86_64-unknown-linux-gnu)'
+          outline_version=$(ast-outline --version)
+          test "${outline_version%%$'\n'*}" = 'ast-outline 1.9.0'
+          test "$(cgwalters-forge-misctool --version)" = 'cgwalters-forge-misctool 0.1.0'
+          ast-outline src/main.rs
+          ast-grep run --pattern 'fn main() -> $RET { $$$ }' --lang rust src/main.rs

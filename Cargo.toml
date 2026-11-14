@@ -10,10 +10,7 @@ anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order", "arbitrary_precision"] }
 ryu-js = "1"
-serde = { version = "1", features = ["derive"] }
 sha2 = "0.11"
-tempfile = "3"
-toml = "1"
 
 [dev-dependencies]
-regex = "1"
+tempfile = "3"

@@ -1,7 +1,7 @@
 # Every package ast-outline 1.9.0 resolves to, pinned exactly so a new upload
 # cannot change what runs on the host. uv tool install ignores hashes here, so
-# none are listed; --no-build and the manifest's exclude_newer cover the rest.
-# Regenerate with the manifest's exclude_newer date:
+# none are listed; --no-build and the Check workflow's cutoff cover the rest.
+# Regenerate with that same --exclude-newer date:
 #   echo ast-outline==1.9.0 | uv pip compile --universal --no-build --no-header \
 #     --no-annotate --exclude-newer 2026-10-21T00:00:00Z - -o constraints/ast-outline.txt
 ast-outline==1.9.0
