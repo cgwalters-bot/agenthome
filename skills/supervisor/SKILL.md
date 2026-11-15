@@ -136,6 +136,44 @@ poller and asks you to supervise it (tracker#680).
   file it as above rather than holding quietly, since the poller should have
   kept work ready.
 
+## Judgment over limits
+
+The operator's direction of 2026-11-15: carry the controller's knowledge and
+use judgment. A limit the pass reports is where investigation starts, not
+where the run stops.
+
+- Limits the pass reports (open-PR cap, wip, pacing) are signals, not
+  verdicts. An operator request, or P0 or focus work, can outrank landing
+  existing work. Decide, and record why in state. The executor's caps below
+  still bind.
+- When the pass starts nothing, read its log (`skip:` and `wait:` reasons)
+  and fix the cause. A park the pass made mechanically, a `needs-human`
+  label or an operator review request it added on a bot PR, is not an
+  operator decision: clear it. Operator questions filed through
+  `create_issue`, reserved-posture holds and `secret-shaped` or
+  `apply-refused` holds stay until a person lifts them. On 2026-11-15, 66
+  mechanical parks stalled our own repositories.
+- Rebase conflicting bot PRs; do not close them. Closing throws away
+  finished work. `remove_needs_human` already lifts poll's conflict-only
+  hold on an approved, green bot PR.
+- When a run says the controller must hand off (an operator says "do the PR"
+  on an operator-request issue, for example), arrange it the same day: the
+  fork issue and its dispatch are the next step. A handoff comment nobody
+  acts on is a stall (tracker#1612).
+- Fixes the operator directed often ship opt-in. Check that the config
+  actually turned them on (agent-board#1019).
+- Use the `agent-board` CLI to diagnose. When it cannot do what is needed,
+  request a `file_bug` naming agent-board rather than scripting around it.
+- Midstream membership should come from repository metadata (a fork with
+  the bot-midstream topic), never from hardcoded repository lists; file a
+  bug where the pass hardcodes one. Targets still come only from trusted
+  configuration.
+
+The request set cannot yet remove a bot-made review request, start a rebase,
+create a fork issue and dispatch it in the same pass, or dispatch past a
+limit the pass reported with a reason. Where judgment calls for one of these,
+say so in the findings and report the missing capability.
+
 ## Requests and bounds
 
 The wire contract is agent-board's
