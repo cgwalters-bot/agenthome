@@ -649,6 +649,19 @@ class RulesTests(unittest.TestCase):
         self.assertNotIn("direction, spending, security posture, private infrastructure",
                          read("skills/supervisor/SKILL.md").replace("\n", " "))
 
+    def test_supervisor_judges_limits_instead_of_bailing(self):
+        self.assert_phrases(["skills/supervisor/SKILL.md"], [
+            "Limits the pass reports (open-PR cap, wip, pacing) are signals",
+            "`skip:` and `wait:` reasons", "is not an operator decision: clear it",
+            "Rebase conflicting bot PRs; do not close them", "arrange it the same day",
+            "actually turned them on", "request a `file_bug` naming agent-board",
+            "never from hardcoded repository lists", "Targets still come only from trusted configuration",
+            "The executor's caps below still bind", "stay until a person lifts them",
+            "cannot yet remove a bot-made review request, start a rebase",
+            "dispatch past a limit the pass reported with a reason",
+        ])
+        self.assertNotIn("diagnose and act", normalized(read("skills/supervisor/SKILL.md")))
+
     def test_the_check_refuses_each_kind_of_bad_input(self):
         def skill(name):
             return f"---\nname: {name}\ndescription: Load when testing.\n---\n\nBody.\n"
