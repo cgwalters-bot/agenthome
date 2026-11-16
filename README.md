@@ -89,13 +89,31 @@ configuration repository and ref through the caller's own variables. The
 provider address and key are placeholders a run replaces; `just check-config`
 enforces the placeholders, since this repository is public.
 
+`opencode-local.json` is an opt-in profile for interactive sessions on a
+self-hosted OpenAI-compatible endpoint (llama.cpp router models), with a
+trimmed `local` agent for small GPUs. Merge it over the deployed configuration
+with `OPENCODE_CONFIG=~/.config/opencode/opencode-local.json opencode`
+(tested with `opencode` 1.18.35, using its `provider`/`npm`/`options` format;
+native V2 `providers` entries are ignored by that launcher). It
+enables only its own provider and routes every agent, title and compaction
+included, to it; `just check-config` refuses a profile that leaves any agent on
+praxis. Its endpoint is a placeholder too, replaced in the operator's private
+derived configuration at `provider.local.options.baseURL`. Before starting a
+session, preview model resolution without inference or applying caller changes:
+`OPENCODE_CONFIG=~/.config/opencode/opencode-local.json opencode --pure models local`.
+The output must list the three `local/` model IDs, not just exit successfully:
+1.18.35 also exits zero for `Provider not found`. This is a configuration preview,
+not proof that the endpoint serves those models or supports tool calls.
+Project configuration loads after it, so a repository's
+own `opencode.json` can still re-enable praxis.
+
 The runner follows the review procedure in the skill named by a task, such as
 agentic-job's `implement` skill and its `diff-reviewer` subagent. The build
 prompt in `opencode-runner.json` defers to that procedure and keeps its one read-only
 `general` reviewer for tasks whose named skills don't define a review. That
 prompt differs from homegit's copy; keep the change on a re-sync.
 
-Both files are copied from homegit `dotfiles/.config/opencode/` at source
+`opencode.json` and `opencode-runner.json` are copied from homegit `dotfiles/.config/opencode/` at source
 commit `c027d9f4c28c8e21df37f82e978b3fc55fe73cab`, with the provider address
 replaced by a placeholder.
 

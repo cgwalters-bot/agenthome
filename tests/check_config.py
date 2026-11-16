@@ -2,7 +2,8 @@
 
 Parity map: the test names below retain the names from tests/config.rs,
 tests/opencode_config.rs and tests/rules.rs. Their negative fixtures retain
-source order (32 role/tier, 9 provider + 3 runner, 7 + 18 rules mutations).
+source order (32 role/tier, 9 provider + 3 runner, 7 + 18 rules mutations),
+with later provider fixtures appended.
 The two JSON.stringify serialization tests stay in Rust in tests/json.rs:
 they exercise the shared eval implementation, not configuration validation.
 """
@@ -82,6 +83,7 @@ def load():
         "tiers": parse_jsonc(read("prompt-tiers.json")),
         "catalogue": parse_jsonc(read("opencode/opencode.json")),
         "runner": parse_jsonc(read("opencode/opencode-runner.json")),
+        "local": parse_jsonc(read("opencode/opencode-local.json")),
         "profile": read("roles/opencode/eval-tiered.json"),
         "claude": {p.name: read(p.relative_to(ROOT))
                    for p in (ROOT / "roles/claude/agents").iterdir()},
@@ -322,6 +324,14 @@ def hostname(url):
     return authority.rsplit("@", 1)[-1].split(":", 1)[0]
 
 
+def check_placeholders(options, api_key):
+    require(sorted(object_value(options)) == ["apiKey", "baseURL"],
+            "options hold only baseURL and apiKey")
+    host = hostname(options["baseURL"])
+    require(host is not None and host.endswith(".invalid"), "baseURL is a placeholder")
+    require(options["apiKey"] == api_key, "apiKey is a placeholder")
+
+
 def check_opencode(config, runner):
     # Stop real provider hosts/credentials reaching a public checkout. Only
     # allow the two inert fields that a run replaces, not headers or extra URLs.
@@ -330,13 +340,11 @@ def check_opencode(config, runner):
     name, provider = next(iter(providers.items()))
     require(config.get("enabled_providers") == [name], "enabled_providers names only that provider")
     require("disabled_providers" not in config, "no disabled_providers")
-    options = object_value(provider.get("options", {}))
-    require(sorted(options) == ["apiKey", "baseURL"], "options hold only baseURL and apiKey")
-    host = hostname(options["baseURL"])
-    require(host is not None and host.endswith(".invalid"), "baseURL is a placeholder")
-    require(options["apiKey"] == "unused", "apiKey is a placeholder")
-    for key in ("provider", "enabled_providers", "disabled_providers"):
+    check_placeholders(provider.get("options", {}), "unused")
+    # agentic-job checks only "provider"; a 2.x provider would bypass its proxy.
+    for key in ("provider", "providers", "enabled_providers", "disabled_providers"):
         require(key not in runner, f"runner profile leaves {key} alone")
+    require("providers" not in config, "no opencode 2.x providers")
     for source in (config, runner):
         models = [source.get("model"), source.get("small_model")]
         models.extend(a.get("model") for a in source.get("agent", {}).values())
@@ -347,6 +355,41 @@ def check_opencode(config, runner):
             prefix = name + "/"
             require(model.startswith(prefix) and model[len(prefix):] in provider["models"],
                     f"{model} is not a model the provider defines")
+
+
+def check_local(config, local):
+    # The local-only profile must leave no path to the broker: any agent whose
+    # base model it does not override (title and compaction among them) would
+    # still send session content there.
+    for key in ("providers", "disabled_providers"):
+        require(key not in local, f"local profile leaves {key} alone")
+    providers = local.get("provider")
+    require(isinstance(providers, dict) and len(providers) == 1, "local profile defines one provider")
+    pool, entry = next(iter(providers.items()))
+    require(pool not in config["provider"], f"provider {pool} is defined twice")
+    require(local.get("enabled_providers") == [pool], "local profile enables only its provider")
+    # Keep the profile usable by the documented V1 launcher, not just V2.
+    require(sorted(object_value(entry)) == ["models", "npm", "options"],
+            f"provider.{pool} holds only npm, options and models")
+    require(entry["npm"] == "@ai-sdk/openai-compatible", "local provider uses the compatible adapter")
+    check_placeholders(entry["options"], "none")
+    models = object_value(entry["models"])
+    for model in models.values():
+        require(set(object_value(model)) <= {"cost", "limit"},
+                f"provider.{pool} models hold only cost and limit")
+    require(local.get("share") == "disabled", "local profile disables sharing")
+    base = config.get("agent", {})
+    overrides = object_value(local.get("agent", {}))
+    require(local.get("default_agent") in overrides, "local profile defaults to its own agent")
+    require(local.get("model") and local.get("small_model"), "local profile sets model and small_model")
+    references = [local["model"], local["small_model"]]
+    references.extend(object_value(overrides.get(name, {})).get("model", agent.get("model"))
+                      for name, agent in base.items())
+    references.extend(object_value(agent).get("model") for agent in overrides.values())
+    for model in filter(None, references):
+        require(isinstance(model, str), "model is a string")
+        provider, _, identifier = model.partition("/")
+        require(provider == pool and identifier in models, f"{model} is not served by {pool}")
 
 
 def walk(directory):
@@ -534,6 +577,7 @@ class ConfigurationTests(unittest.TestCase):
     def test_opencode_configuration_meets_the_wrapper_rules(self):
         c = load()
         check_opencode(c["catalogue"], c["runner"])
+        check_local(c["catalogue"], c["local"])
 
     def test_reasoning_models_request_encrypted_reasoning_for_stateless_turns(self):
         models = load()["catalogue"]["provider"][POOL]["models"]
@@ -548,7 +592,8 @@ class ConfigurationTests(unittest.TestCase):
                                 for v in cost.values()), name)
 
     def test_the_check_refuses_configurations_a_run_would_refuse_or_that_leak_an_address(self):
-        # opencode_config.rs: nine catalogue and three runner fixtures, in order.
+        # opencode_config.rs: nine catalogue and three runner fixtures, in order,
+        # each list then appending a 2.x providers fixture.
         c = load()
         provider = c["catalogue"]["provider"][POOL]
         for index, (path, value) in enumerate([
@@ -559,6 +604,7 @@ class ConfigurationTests(unittest.TestCase):
             ("model", "praxis/undefined-model"), ("agent.plan.model", "other/model"),
             ("model", "praxis/toString"),
             ("provider.praxis.options.headers", {"Authorization": "Bearer x"}),
+            ("providers", {}),
         ]):
             with self.subTest(catalogue_fixture=index + 1):
                 bad = copy.deepcopy(c["catalogue"])
@@ -568,12 +614,38 @@ class ConfigurationTests(unittest.TestCase):
         for index, (path, value) in enumerate([
             ("provider", {}), ("small_model", "other/x"),
             ("agent", {"general": {"model": "praxis/nope"}}),
+            ("providers", {}),
         ]):
             with self.subTest(runner_fixture=index + 1):
                 bad = copy.deepcopy(c["runner"])
                 set_path(bad, path, value)
                 with self.assertRaises(ValueError):
                     check_opencode(c["catalogue"], bad)
+
+    def test_the_local_profile_leaves_no_path_to_the_broker(self):
+        c = load()
+        for index, (path, value) in enumerate([
+            ("enabled_providers", [POOL, "local"]), ("enabled_providers", [POOL]),
+            ("agent.title", {}), ("agent.compaction", {"model": "praxis/gpt-6.1-sol"}),
+            ("agent.plan", {"disable": True}), ("agent.title", "x"),
+            ("small_model", "praxis/gpt-6-luna"), ("model", "local/undefined-model"),
+            ("agent.extra", {"model": "praxis/gpt-6-luna"}),
+            ("agent.local.model", "local/undefined-model"),
+            ("share", "manual"), ("default_agent", "build"),
+            ("providers", {}), ("disabled_providers", [POOL]),
+            ("provider", {}), ("provider.praxis", c["local"]["provider"]["local"]),
+            ("provider.local.options.baseURL", "http://192.168.1.10:8080/v1"),
+            ("provider.local.options.apiKey", "sk-" + "real"),
+            ("provider.local.headers", {"Authorization": "Bearer x"}),
+            ("provider.local.options.headers", {"Authorization": "Bearer x"}),
+            ("provider.local.npm", "@ai-sdk/openai"),
+            ("provider.local.models.gpt-oss-20b-MXFP4.options", {"baseURL": "http://10.0.0.2/v1"}),
+        ]):
+            with self.subTest(local_fixture=index + 1):
+                bad = copy.deepcopy(c["local"])
+                set_path(bad, path, value)
+                with self.assertRaises(ValueError):
+                    check_local(c["catalogue"], bad)
 
 
 def set_path(config, path, value):
