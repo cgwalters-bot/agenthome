@@ -178,19 +178,16 @@ take `model: inherit`: the manifest has no verified Claude pool, and Claude
 Code subagents cannot start subagents, so the lead works there only as the
 main agent. `opencode/opencode-runner.json` keeps its direct-worker policy.
 
-Installation contract with agentic-job#1367: nothing delivers these files to
-runs yet. From a configuration repository, agentic-job (main at 0eb1e4f)
-installs only the root `skills/` tree and, from `config-path`, the
-instructions and opencode's `opencode.json` and `opencode-runner.json`; it has
-no source-subagent support, so the only subagent a run gets is its embedded
-`diff-reviewer`. #1367's plan would read a configuration repository's root
-`agents/*.md` and install them into `~/.claude/agents/` and
-`~/.config/opencode/agents/` for the current harness. The role agents
-stay out of a root `agents/` on purpose: one file would then reach both
-tools, and opencode 1.18.35 rejects a Claude `tools: Read, Grep` line, as its
-`tools` is a map. Adopting them is a separate change once that support lands.
-The eval profile reaches a run only if a caller stages it as
-`opencode-runner.json`. No caller does this.
+The supported opencode source-subagent delivery is an inline
+`opencode-runner.json` profile read from the configuration repository's selected
+path. It does not require a root `agents/` installer. The
+[pinned source audit](eval/report.md#supported-interfaces-inspected-read-only)
+establishes that contract, not actual role/model execution in a deployed runner.
+The closed installer issue is not installation proof. Opt-in complete bundles
+for all three arms can be generated through the existing configuration resolver;
+see [the protocol](eval/README.md#role-configuration-contract-and-authorized-execution).
+No ordinary caller or runner setting changes, and measurement is still blocked
+on capacity, enforcement and execution evidence.
 
 ## Offline role evaluation
 

@@ -8,10 +8,13 @@ they exercise the shared eval implementation, not configuration validation.
 """
 
 import copy
+import argparse
 import json
 import math
 from pathlib import Path
 import re
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -223,6 +226,93 @@ def check_roles(config, resolved):
 
 def check(config):
     check_roles(config, check_tiers(config))
+
+
+def eval_bundle(config, arm):
+    """Render opt-in source profiles using the same validated resolver as lint.
+
+    No provider, price, credential or permission scope is added. The complete
+    model map includes hidden helpers and the harness's embedded reviewer.
+    """
+    require(arm in ("single-strong", "single-cheap", "tiered"), "unknown eval arm")
+    check(config)
+    resolved = check_tiers(config)
+    catalogue = copy.deepcopy(config["catalogue"])
+    profile = copy.deepcopy(config["runner"])
+    if arm == "tiered":
+        tiered = parse_jsonc(config["profile"])
+        profile["default_agent"] = tiered["default_agent"]
+        profile["agent"].update(tiered["agent"])
+    else:
+        model = resolved["sol" if arm == "single-strong" else "luna"]
+        catalogue["model"] = catalogue["small_model"] = model
+        profile["model"] = profile["small_model"] = model
+    # Explicitly cover opencode's implicit helpers and the embedded harness role.
+    names = set(catalogue.get("agent", {})) | set(profile["agent"]) | {
+        "build", "plan", "general", "explore", "compaction", "title", "summary", "diff-reviewer"}
+    models = {}
+    for name in sorted(names):
+        base = catalogue.get("agent", {}).get(name, {})
+        agent = profile["agent"].setdefault(name, {})
+        selected = (agent.get("model", base.get("model", catalogue["model"]))
+                    if arm == "tiered" else model)
+        agent["model"] = selected
+        if name in catalogue.get("agent", {}):
+            catalogue["agent"][name]["model"] = selected
+        models[name] = selected
+    models["model"] = profile.get("model", catalogue["model"])
+    models["small_model"] = profile.get("small_model", catalogue["small_model"])
+    return {"opencode.json": catalogue, "opencode-runner.json": profile,
+            "resolved-models.json": models}
+
+
+class EvalBundleTests(unittest.TestCase):
+    def test_cli_writes_each_complete_source_bundle_and_refuses_overwrite(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for arm in ("single-strong", "single-cheap", "tiered"):
+                output = Path(directory) / arm
+                command = [sys.executable, __file__, "--eval-arm", arm, "--output", str(output)]
+                result = subprocess.run(command, capture_output=True, text=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                expected = eval_bundle(load(), arm)
+                self.assertEqual({p.name for p in output.iterdir()}, set(expected) | {"AGENTS.md"})
+                for name, value in expected.items():
+                    self.assertEqual((output / name).read_text(), profile_json(value))
+                self.assertEqual((output / "AGENTS.md").read_text(), read("opencode/AGENTS.md"))
+                self.assertNotEqual(subprocess.run(command, capture_output=True).returncode, 0)
+
+    def test_all_arms_are_complete_opt_in_and_do_not_mutate_defaults(self):
+        config = load()
+        before = copy.deepcopy(config)
+        for arm, tier in [("single-strong", "sol"), ("single-cheap", "luna"), ("tiered", None)]:
+            with self.subTest(arm=arm):
+                bundle = eval_bundle(config, arm)
+                profile = bundle["opencode-runner.json"]
+                self.assertEqual(profile["default_agent"], LEAD if tier is None else "build")
+                self.assertEqual(bundle["opencode.json"]["provider"], config["catalogue"]["provider"])
+                self.assertEqual(profile["agent"]["general"]["permission"],
+                                 config["runner"]["agent"]["general"]["permission"])
+                self.assertTrue({"summary", "compaction", "diff-reviewer", "build"} <=
+                                bundle["resolved-models.json"].keys())
+                if tier:
+                    expected = check_tiers(config)[tier]
+                    self.assertEqual(set(bundle["resolved-models.json"].values()), {expected})
+                    for agent in bundle["opencode.json"]["agent"].values():
+                        self.assertEqual(agent["model"], expected)
+                else:
+                    for name, agent in parse_jsonc(config["profile"])["agent"].items():
+                        self.assertEqual(profile["agent"][name], agent)
+                self.assertEqual(eval_bundle(config, arm), bundle)
+        self.assertEqual(config, before)
+
+    def test_bundles_reject_invalid_resolution_and_unknown_arms(self):
+        with self.assertRaises(ValueError):
+            eval_bundle(load(), "unknown")
+        for arm in ("single-strong", "single-cheap", "tiered"):
+            config = load()
+            config["tiers"]["pools"][POOL]["luna"]["fallback"] = "luna"
+            with self.assertRaises(ValueError):
+                eval_bundle(config, arm)
 
 
 def hostname(url):
@@ -690,4 +780,16 @@ class RulesTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    if "--eval-arm" in sys.argv:
+        parser = argparse.ArgumentParser(description="Render offline opt-in eval source configuration")
+        parser.add_argument("--eval-arm", choices=("single-strong", "single-cheap", "tiered"), required=True)
+        parser.add_argument("--output", type=Path, required=True)
+        args = parser.parse_args()
+        bundle = eval_bundle(load(), args.eval_arm)
+        # Refuse overwrite so normal source configuration cannot be replaced.
+        args.output.mkdir(parents=False, exist_ok=False)
+        for name, value in bundle.items():
+            (args.output / name).write_text(profile_json(value), encoding="utf-8")
+        (args.output / "AGENTS.md").write_text(read("opencode/AGENTS.md"), encoding="utf-8")
+    else:
+        unittest.main()

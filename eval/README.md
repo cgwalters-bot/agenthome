@@ -51,7 +51,25 @@ The `tiered` arm's role configuration is edited directly ("Shared role agents"
 in the top-level README): `roles/opencode/eval-tiered.json` for opencode and
 `roles/claude/agents/` for Claude Code; `just check` lints them. This protocol
 references those artifacts rather than copying role prompts, concrete model IDs
-or tier mappings. The single-model arms' bundles do not exist yet.
+or tier mappings. Generate complete opt-in bundles with the existing configuration
+checker/resolver (the former Rust role renderer was removed):
+
+```text
+python3 tests/check_config.py --eval-arm single-strong --output /tmp/strong
+python3 tests/check_config.py --eval-arm single-cheap --output /tmp/cheap
+python3 tests/check_config.py --eval-arm tiered --output /tmp/tiered
+```
+
+Each output directory must not already exist. These commands only write local
+artifacts: `opencode.json`, `opencode-runner.json`, `AGENTS.md`, and
+`resolved-models.json`. They never install or dispatch anything. Single-model
+arms retain the normal direct-worker prompt and permissions; every configured
+agent, hidden helper and embedded reviewer is explicitly assigned resolved sol
+or luna, respectively. Tiered adds the canonical five inline roles to the same
+base configuration. The provider catalogue and credential/address placeholders
+are unchanged. `resolved-models.json` records configuration resolution, **not**
+observed provider versions or proof of execution. Archive those separately.
+Use a fresh runner session when testing bundles; configuration is loaded at startup.
 
 A frozen `configuration` contains `configRevision`, `harnessRevision` (full
 commits), `roleInterface` (pinned link to the role configuration), `environment`
@@ -74,9 +92,11 @@ For an authorized research run:
    the checked-in files at a revision where `just check` passes, and archive them and
    resolved model maps. Keep ordinary hosted direct-worker settings unchanged;
    tiered is an opt-in research configuration only.
-2. Verify the actual runner's installation contract, including agentic-job#1367's
-   missing source-subagent support. Custom role agents are **not** necessarily
-   installed. Prove the selected runner loads each role file and model setting.
+2. Verify the actual runner's supported source-profile contract (pinned source
+   evidence is in [the report](report.md#supported-interfaces-inspected-read-only)).
+   Inline roles arrive through `opencode-runner.json`, not a parallel installer
+   or root `agents/` delivery. The closed installer issue is not installation
+   proof. Prove the selected runner loads each role prompt and model setting.
    If unavailable, stop and record the dependency as pending. Do not assume
    acp-drive can spawn arbitrary tool/model children. It may drive supported
    sessions only; use a separately authorized harness with verified role support
@@ -94,6 +114,65 @@ For an authorized research run:
    Both inputs are JSON documents; RUNS is an array, not a partial JSONL stream.
    Malformed/truncated JSON is rejected, not silently repaired. No commands from
    either document are executed. `just check` exercises synthetic fixtures offline.
+
+## Opt-in offline readiness evidence
+
+The concrete threat is launching sizing, probes or comparison cells against
+stale capacity, double-committed allocation or parent-only limits. One offline
+consistency mechanism rejects incomplete evidence before any inference is
+considered:
+
+```text
+cargo run --locked -- check-eval-readiness eval/readiness.json
+```
+
+The checked-in file is deliberately blocked. This command uses the current UTC
+Unix time, reads at most 4 MiB, does no network I/O and executes nothing. It exits
+nonzero for missing, future, more-than-one-hour-old, expired, inconsistent or
+insufficient evidence. Even success says `evidence-consistent` and
+`inferenceAuthorized: false`: it is neither a spending authority nor a replacement
+for the existing trusted enforcement service. Assertions in JSON cannot prove
+that service exists. There is no launcher or default workflow consuming success.
+The [report](report.md#supported-interfaces-inspected-read-only) explains how to
+obtain and independently validate supported evidence and the absent prerequisites.
+
+Version 1 uses unsigned integer Unix seconds and integer micro-USD (no floating
+point price arithmetic). The envelope has `pool: "current-openai"`,
+`noNewSpend: true`, `window: {start, reset}` (current, at most seven days), and
+`finishBy` before the reset. Each of `capacity`, `reservation`, `enforcement`,
+`delivery`, `cache` needs `source` (accessible nonsecret HTTPS artifact), `sha256`
+(64 hex of the archived evidence), `observedAt`, `validUntil`, `pool`,
+`windowStart`, `windowReset`. The command checks syntax and consistency, not
+link accessibility or the linked digest: the trusted reviewer must retrieve,
+hash and validate the original evidence. Do not convert an unknown into `true`.
+
+* `capacity`: `basis: "existing-allocation"`, `allocationMicroUsd`,
+  `spentMicroUsd`, `otherCommitmentsMicroUsd`, `remainingMicroUsd`. Remaining must
+  equal allocation minus spent minus other commitments; the evaluation reservation
+  is not also included in other commitments. Prices/weekly targets are not evidence.
+* `reservation`: `id`, `capacitySha256`, `microUsd` no greater than net remaining.
+* `enforcement`: `interface` naming the supported service/configuration,
+  `reservationId`, `scope: "all-stages-and-children"`, `perCell` and `aggregate`.
+  Each limit object requires positive `microUsd`, `tokens`, `turns`, `seconds`.
+  This schema describes required evidence, **not new broker or configuration keys**.
+* `delivery`: `contract: "source-opencode-runner-profile"`, full 40-hex
+  `harnessRevision`, `rolesAndModelsVerified: true` with actual execution evidence.
+* `cache`: `isolationVerified: true`, `boundedPrimingVerified: true` with proof.
+* `plan`: `sizing`, `probes`, `priming`, `cells`, each `{count, limits}`. Counts
+  are 1–54; cells must be 54, priming 27 (one procedure for each warm cell).
+  Each activity is bounded by $5, 200000 tokens, 100 turns, 1800 seconds.
+  Priming plus its cell must fit the same per-cell enforced ceiling. All activities
+  sum into aggregate limits; the aggregate dollar ceiling must fit the reservation.
+  The conservative serial sum of elapsed ceilings must fit before `finishBy`.
+
+Reservation, enforcement, delivery and cache evidence must also carry `planSha256`
+equal to `manifest_digest(plan)` (the canonical digest described above), preventing
+reuse for different phase counts/limits. All evidence must remain valid through
+`finishBy`; refresh and revalidate before using it. Archive the immutable plan,
+configuration/environment pins and exact observed model maps with the evidence.
+No real allocation, reservation or enforcement artifact is supplied in this repo;
+synthetic tests are not proof. Do not run probes to fill delivery/cache fields
+until their own capacity and enforced limits have independently been established.
 
 ## Fair comparison and predeclared rule
 

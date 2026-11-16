@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "pool": "current-openai",
+  "noNewSpend": true,
+  "window": null,
+  "capacity": null,
+  "reservation": null,
+  "enforcement": null,
+  "delivery": null,
+  "cache": null,
+  "plan": null,
+  "finishBy": null
+}
