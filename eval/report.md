@@ -2,7 +2,8 @@
 
 > This text is LLM generated.
 
-Part of #52. As of 2026-11-03, this is **blocked**, not a measured comparison or
+Part of https://github.com/cgwalters-forge/agenthome/issues/52.
+As of 2026-11-16, this is **blocked**, not a measured comparison or
 an adoption recommendation. No evaluation cells or paid probes were launched.
 The first gate is unverified existing weekly capacity and enforceable evaluation
 budgets. It is unknown whether new money would be needed; no new money was
@@ -24,8 +25,8 @@ accessible source links at the starting revision
 source paths were retrieved successfully using `gh api`. The inspected protocol,
 configuration and issue comments contain no remaining-capacity ledger or reserved
 evaluation allocation. Model prices and the ability to run this session do not
-prove spare weekly capacity. No other repository was investigated and no jobs
-were dispatched to bypass the gate.
+prove spare weekly capacity. That historical preflight did not investigate other
+repositories. The current read-only source audit below does; no jobs were dispatched.
 
 To continue, supply accessible, dated evidence of the existing pool's accounting
 window/reset and remaining usable allocation net of commitments, with an evaluation
@@ -37,16 +38,13 @@ an assumed replenishment or automatic top-up.
 
 ## Remaining gates, not completed work
 
-The local executable reports `agentic-job 0.6.9`; this is not a full harness revision
-pin or a role-execution test. The
-[starting installation documentation](https://github.com/cgwalters-forge/agenthome/blob/b04318245f2a4fb28df8856d7cb809cf990cfea5/README.md#shared-role-templates)
-records the source-subagent delivery dependency on **agentic-job#1367** and warns
-that rendered files do not demonstrate installation. Current delivery remains
-unverified, rather than proved absent by that older documentation. After capacity
-is established, pin the actual harness revision and demonstrate that its supported
-opencode runner loads and executes the intended role prompts and model settings
-through that delivery contract. If absent, stop on #1367; do not build a parallel
-installer or assume `acp-drive` can spawn arbitrary model children.
+The historical preflight's local `agentic-job 0.6.9` version is not a full harness
+revision pin or a role-execution test. The current source audit establishes the
+inline source-profile delivery contract below, not deployment or execution proof.
+After capacity and probe limits are established, pin the actual harness/opencode
+revisions and demonstrate that they load and execute the intended role prompts
+and model settings. Do not build a parallel installer or assume `acp-drive` can
+spawn arbitrary model children.
 
 Historical sizing/selection was not started after the first gate failed. No
 requests, starting commits, independent check bundles or sample digests have been
@@ -55,13 +53,14 @@ their sizing evidence, and prove each independent check fails before and passes
 after the historical fix. Keep checks and solutions outside agent context. Freeze
 the same immutable requests, starts and check digests for all arms before comparison.
 
-The shared renderer/resolver remains the intended interface: single-strong must
-use resolved sol throughout, single-cheap resolved luna throughout, and tiered
-the rendered role mapping. Complete single-model bundles are still missing; supply
-and test them only as opt-in evaluation bundles, without changing ordinary runner
-defaults. Configured IDs are not proof of provider model versions. No exact
-model/version maps, complete three-arm bundles, common cost basis, environment pin
-or harness pin are claimed here. Archive those with digests before any cell runs.
+The former Rust renderer was removed; the existing Python configuration checker
+now renders complete opt-in bundles through its shared tier resolver. Single-strong
+uses resolved sol throughout, single-cheap resolved luna throughout, and tiered
+adds the canonical inline role mapping. Tests cover helper/reviewer assignments,
+provider/permission preservation and unchanged defaults. Configured IDs are not
+proof of provider model versions. Exact observed model/version maps, common cost
+basis, environment/deployed harness pins remain absent. Archive those with digests
+before any cell runs.
 
 Cache namespace isolation, identical bounded priming and aggregate enforcement
 remain unverified. Once all gates pass, predeclare a balanced rotated order for
@@ -93,3 +92,97 @@ inputs. The summarizer correctly emits no decisions rather than manufacturing on
 Even a future complete 54-cell comparison is a tiny historical sample, not evidence
 of general performance or permission to adopt defaults. Synthetic fixture tests
 validate the offline machinery only; they are not evaluation evidence.
+
+## Supported interfaces inspected read-only
+
+On 2026-11-16, GitHub source/API inspection pinned agentic-job to
+`670e3c3e7def4c0fd456397b0f2034e764757184` and agent-board to
+`20d1a3c7d39a390872d8034e98c46718e1eed760`. These are source observations, not
+claims about the deployed runner. No inference addresses or credentials were
+collected; any later execution must use addresses from its environment.
+
+**Delivery:** agentic-job's
+[source reader](https://github.com/cgwalters-forge/agentic-job/blob/670e3c3e7def4c0fd456397b0f2034e764757184/crates/agentic-job/src/run/agent.rs#L1100-L1157)
+reads `opencode.json`, `AGENTS.md`, and `opencode-runner.json` from the selected
+configuration-repository path. Its
+[profile validation and write](https://github.com/cgwalters-forge/agentic-job/blob/670e3c3e7def4c0fd456397b0f2034e764757184/crates/agentic-job/src/run/agent.rs#L859-L957)
+reject provider settings in the profile and copy it to the opencode configuration
+directory. Inline `agent` entries are the supported source-subagent route for
+this opencode-only comparison. Root source `agents/*.md` is not installed; the
+[embedded reviewer](https://github.com/cgwalters-forge/agentic-job/blob/670e3c3e7def4c0fd456397b0f2034e764757184/skills/agents/diff-reviewer.md)
+has no model in frontmatter. The
+[closed delivery issue](https://github.com/cgwalters-forge/agentic-job/issues/1367)
+is not proof of installation and is not the dependency to reopen. Verify the
+actual caller's config repository/ref/path, archived installed profile digest,
+opencode merge precedence (including ACP/main-model overrides), and observed
+role prompts/model versions. Rendering alone proves none of those runtime facts.
+
+**Existing limits:** inspect the pinned
+[budget implementation](https://github.com/cgwalters-forge/agentic-job/blob/670e3c3e7def4c0fd456397b0f2034e764757184/crates/agentic-job/src/session/budget.rs)
+and [harness limits](https://github.com/cgwalters-forge/agentic-job/blob/670e3c3e7def4c0fd456397b0f2034e764757184/docs/harness.md#limits).
+`[limits]` provides `budget` (hundredths of a dollar), `max-requests`,
+`timeout-minutes`, `max-tasks`, `max-worker-tasks`. Budget uses agent-reported cost;
+the documented second-agent path accounts only the main agent's cost. Proxy
+request counting and timeouts do not establish dollar/token/turn enforcement
+across children or aggregate evaluation limits. Do not equate requests to turns.
+Retrieve the trusted deployed limits, `harness.json`, `summary.json` and proxy
+usage records; reconcile child requests and costs exactly once. Missing cache
+write or stage-time counters stay unavailable. The
+[summary implementation](https://github.com/cgwalters-forge/agentic-job/blob/670e3c3e7def4c0fd456397b0f2034e764757184/crates/agentic-job/src/run/summary.rs)
+is accounting, not a reservation interface. The supported `acp-drive` child is
+not an arbitrary OpenAI role launcher.
+
+**Existing pool accounting:** agent-board's
+[pace reader](https://github.com/cgwalters-forge/agent-board/blob/20d1a3c7d39a390872d8034e98c46718e1eed760/crates/board-forge/src/poll/pace.rs)
+uses a snapshot with `schema`, `updated_at`, `pools` and per-pool `used_percent`,
+`window_minutes`, `resets_at` (plus holds/dispatch timing). Follow the trusted
+caller's `policy.pace` source to retrieve that snapshot, validate freshness,
+window/reset and hold state. Dispatch slots/leases and pace eligibility are not
+reserved dollars. The read-only
+[budget CLI](https://github.com/cgwalters-forge/agent-board/blob/20d1a3c7d39a390872d8034e98c46718e1eed760/crates/agent-board/src/budget.rs)
+supports `agent-board budget --config FILE --four-weeks --until RFC3339` and
+`--split --since RFC3339 --until RFC3339`; these aggregate reported costs against
+configured `budget.weeklyUsd` and `budget.harnessRepositories`, not live allocation.
+The [pool resolver](https://github.com/cgwalters-forge/agent-board/blob/20d1a3c7d39a390872d8034e98c46718e1eed760/crates/agent-board/src/pools.rs)
+selects configured models/budgets; it is not a capacity API. None establishes an
+existing-pool allocation net of commitments or an evaluation reservation.
+
+The new `check-eval-readiness` command validates dated evidence envelopes and
+arithmetic offline, including sizing/probes/priming/all children and all 54 cells.
+Its checked-in input fails closed. A reviewer must retrieve/hash the originals,
+confirm allocation authority distinct from prices/targets, verify a real reservation
+against other commitments, and verify actual enforcement before filling it in.
+It cannot create the missing service or authorize a run. No broker/token scope,
+spending authority, top-up, or default routing is added.
+
+## External prerequisite and concrete follow-up
+
+The exact first remaining gate is **no verified existing-allocation reservation
+and child-inclusive aggregate/per-cell enforcement**. Role/model execution and
+cache proof follow only within such bounds. Searches of open/closed issues found
+no direct implementation issue for this combined contract.
+[Cost reporting](https://github.com/cgwalters-forge/agent-board/issues/281),
+[banked usage](https://github.com/cgwalters-forge/agent-board/issues/940), and
+[dispatch leases](https://github.com/cgwalters-forge/agent-board/issues/382)
+do not provide it. No issue was filed and no issue number is claimed.
+
+Concrete unfiled follow-up repository: `cgwalters-forge/agentic-job`.
+Title: **Expose and enforce existing-allocation bounds across evaluation children**.
+Body:
+
+> The offline evaluation in agenthome needs a supported evidence/enforcement
+> contract before it can launch sizing, probes, priming or 54 comparison cells.
+> Reuse existing pool accounting and run-token enforcement, without new money,
+> top-ups or wider broker/token scope. Expose a read-only dated accounting
+> window/reset, existing allocation net of spending and other commitments, and
+> reservation identity. Bind aggregate and per-cell dollar/token/turn/time ceilings
+> to that reservation and cover every stage/child, failing closed on unavailable
+> accounting. Current agent-reported budget, request caps, timeout and board pace
+> reports do not prove this coverage. Add tests demonstrating child-inclusive
+> exhaustion and reservation consistency, and document the supported keys and
+> artifacts a caller can validate. Coordinate the allocation evidence with
+> agent-board rather than treating its configured weekly target as capacity.
+
+This is infrastructure work, not a request for the operator to implement it
+manually. Until it exists and is verified, retain the useful offline tooling,
+pending manifest, empty runs and blocked verdict.

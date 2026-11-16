@@ -1,7 +1,7 @@
 {
   "version": 1,
   "status": "pending",
-  "pending": "Blocked at capacity preflight: remaining existing weekly OpenAI capacity and enforceable aggregate/per-cell budgets are unverified. No evaluation launched; see eval/report.md. Three historical tasks and runner role-delivery proof (agentic-job#1367) remain unfrozen.",
+  "pending": "Blocked at capacity preflight: existing OpenAI allocation net of commitments, reservation and child-inclusive aggregate/per-cell enforcement are unverified. No evaluation launched; see eval/report.md. Offline bundles and readiness validation exist; three historical tasks, deployed role/model execution and cache proof remain pending.",
   "preflight": null,
   "tasks": [],
   "configuration": null,
