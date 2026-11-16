@@ -1,0 +1,52 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // Opt-in local-only profile, merged over opencode.json through
+  // OPENCODE_CONFIG. Hosted runs never read it: agentic-job accepts only one
+  // provider in opencode.json. It enables only the self-hosted provider and
+  // points every agent at it, title and compaction included, since a model
+  // the base profile sets for them would otherwise send session content to
+  // praxis.
+  "enabled_providers": ["local"],
+  "model": "local/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M",
+  "small_model": "local/granite-4.0-h-tiny-Q4_K_M",
+  "default_agent": "local",
+  // Sharing uploads the session to opencode's service.
+  "share": "disabled",
+  // opencode 1.18.35 reads provider/npm/options. Native V2 providers are
+  // dropped by that launcher's compatibility layer before model resolution.
+  "provider": {
+    "local": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        // Placeholders, as for praxis: the real address is substituted privately.
+        "baseURL": "http://local-inference.invalid/v1",
+        "apiKey": "none"
+      },
+      "models": {
+        // llama.cpp router models: IDs are the GGUF base names.
+        "Qwen3-Coder-30B-A3B-Instruct-Q4_K_M": { "cost": { "input": 0, "output": 0 }, "limit": { "context": 32768, "output": 4096 } },
+        "gpt-oss-20b-MXFP4": { "cost": { "input": 0, "output": 0 }, "limit": { "context": 32768, "output": 4096 } },
+        "granite-4.0-h-tiny-Q4_K_M": { "cost": { "input": 0, "output": 0 }, "limit": { "context": 32768, "output": 4096 } }
+      }
+    }
+  },
+  "agent": {
+    // Small iGPUs process prompts at 200-400 tokens/s; the default build prompt
+    // and tool schemas are about 9,900 tokens, this agent's about 4,600.
+    "local": {
+      "description": "Self-hosted model with a trimmed prompt and tools.",
+      "mode": "primary",
+      "model": "local/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M",
+      "prompt": "You are a coding agent; use bash and read to inspect and change files, and be concise.",
+      "tools": { "*": false, "bash": true, "read": true }
+    },
+    "title": { "model": "local/granite-4.0-h-tiny-Q4_K_M" },
+    "compaction": { "model": "local/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M" },
+    "plan": { "model": "local/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M" },
+    "general": { "model": "local/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M" },
+    // The base profile's cheap tier, mirrored by the smallest local model.
+    "explore": { "model": "local/granite-4.0-h-tiny-Q4_K_M" },
+    "fast": { "model": "local/granite-4.0-h-tiny-Q4_K_M" },
+    "architect": { "model": "local/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M" }
+  }
+}
