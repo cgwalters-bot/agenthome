@@ -1,0 +1,14 @@
+# Third-party actions are pinned by commit and bumped here. References to
+# cgwalters-forge repositories follow main; the review gate's SHA pin in
+# workflows/review.yml is moved by hand
+# (https://github.com/cgwalters-forge/agenthome/issues/2).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+    # Skip releases younger than this, so a compromised release that is
+    # yanked quickly is never proposed.
+    cooldown:
+      default-days: 7
