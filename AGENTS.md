@@ -10,5 +10,4 @@ Otherwise use `rg` and scoped reads; do not retry or install the missing tools.
 
 In this repository the skill is `skills/ast-explore/SKILL.md`.
 
-Run `just check` after changes. It does not provision tools or use the network
-except for Cargo's initial locked dependency fetch.
+Run `just check` after changes. It does not provision tools or use the network.

@@ -38,7 +38,9 @@ text), `checks: {artifact, sha256}` (64 hex), and `sizingEvidence`. Change statu
 to `frozen` only with evidence and the configuration below. Manifest, tasks,
 checks and configuration must be immutable artifacts for the comparison; record
 their content digests in the research report. Every run carries `manifestSha256`,
-computed by `manifest_digest` in `src/eval.rs` (SHA-256 of the `JSON.stringify`
+computed by `agent-board eval summarize` as documented in
+[agent-board's eval documentation](https://github.com/cgwalters-forge/agent-board/blob/main/docs/eval.md)
+(SHA-256 of the `JSON.stringify`
 spelling of the manifest with recursively sorted object keys, preserving array
 order, so digests from the earlier JavaScript summarizer stay valid).
 The summary includes this digest. It binds the entire sample, limits and policies,
@@ -110,29 +112,23 @@ For an authorized research run:
 4. Run independent checks outside agent control; archive commands, exit codes,
    logs, patch and transcripts. Normalize exposed telemetry to the records below.
    Missing provider fields remain unavailable, never inferred from context size.
-5. Summarize offline with `cargo run --locked -- summarize-eval MANIFEST.json RUNS.json`.
+5. Summarize offline with `agent-board eval summarize MANIFEST.json RUNS.json`.
    Both inputs are JSON documents; RUNS is an array, not a partial JSONL stream.
    Malformed/truncated JSON is rejected, not silently repaired. No commands from
-   either document are executed. `just check` exercises synthetic fixtures offline.
+   either document are executed. Synthetic eval fixtures are tested in agent-board;
+   `just check` here validates configuration only. Keep `summary.json` as the
+   recorded pending output.
 
 ## Opt-in offline readiness evidence
 
 The concrete threat is launching sizing, probes or comparison cells against
-stale capacity, double-committed allocation or parent-only limits. One offline
-consistency mechanism rejects incomplete evidence before any inference is
-considered:
-
-```text
-cargo run --locked -- check-eval-readiness eval/readiness.json
-```
-
-The checked-in file is deliberately blocked. This command uses the current UTC
-Unix time, reads at most 4 MiB, does no network I/O and executes nothing. It exits
-nonzero for missing, future, more-than-one-hour-old, expired, inconsistent or
-insufficient evidence. Even success says `evidence-consistent` and
-`inferenceAuthorized: false`: it is neither a spending authority nor a replacement
-for the existing trusted enforcement service. Assertions in JSON cannot prove
-that service exists. There is no launcher or default workflow consuming success.
+stale capacity, double-committed allocation or parent-only limits. The checked-in
+`readiness.json` is deliberately blocked and retained as evidence data, not an
+executable check. Agenthome no longer provides a readiness checker; that code
+belongs in agent-board if wanted and has not been ported here. The schema below
+records the proposed evidence contract, not implemented validation in this repo.
+Assertions in JSON cannot prove that a trusted enforcement service exists, and
+are neither spending authority nor a replacement for that service.
 The [report](report.md#supported-interfaces-inspected-read-only) explains how to
 obtain and independently validate supported evidence and the absent prerequisites.
 
@@ -142,8 +138,7 @@ point price arithmetic). The envelope has `pool: "current-openai"`,
 `finishBy` before the reset. Each of `capacity`, `reservation`, `enforcement`,
 `delivery`, `cache` needs `source` (accessible nonsecret HTTPS artifact), `sha256`
 (64 hex of the archived evidence), `observedAt`, `validUntil`, `pool`,
-`windowStart`, `windowReset`. The command checks syntax and consistency, not
-link accessibility or the linked digest: the trusted reviewer must retrieve,
+`windowStart`, `windowReset`. The trusted reviewer must retrieve,
 hash and validate the original evidence. Do not convert an unknown into `true`.
 
 * `capacity`: `basis: "existing-allocation"`, `allocationMicroUsd`,

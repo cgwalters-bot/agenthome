@@ -4,8 +4,7 @@ Parity map: the test names below retain the names from tests/config.rs,
 tests/opencode_config.rs and tests/rules.rs. Their negative fixtures retain
 source order (32 role/tier, 9 provider + 3 runner, 7 + 18 rules mutations),
 with later provider fixtures appended.
-The two JSON.stringify serialization tests stay in Rust in tests/json.rs:
-they exercise the shared eval implementation, not configuration validation.
+Eval serialization tests now belong to agent-board, not configuration validation.
 """
 
 import copy
