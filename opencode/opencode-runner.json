@@ -12,7 +12,7 @@
     "general": {
       "description": "Optional read-only runner reviewer; may execute checks allowed by the task brief.",
       "mode": "subagent",
-      "model": "praxis/gpt-6.1-sol",
+      "model": "praxis/gpt-6.2-sol",
       "prompt": "Review the primary worker's changes without editing source or delegating further. You may execute tests and checks permitted by the task brief, including generating their normal test/build artifacts. Report findings and actual verification results to the primary worker; leave all fixes to it.",
       "permission": { "edit": "deny", "bash": "allow", "task": "deny" }
     },

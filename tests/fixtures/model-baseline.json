@@ -1,0 +1,7 @@
+{
+  "prompt-tiers.json": "{\"pools\": {\"praxis\": {\"astra\": {\"model\": \"praxis/gpt-6-astra\", \"fallback\": \"sol\"}, \"sol\": {\"model\": \"praxis/gpt-6.1-sol\", \"fallback\": \"luna\"}, \"luna\": {\"model\": \"praxis/gpt-6-luna\", \"fallback\": null}, \"terra\": {\"model\": null, \"fallback\": \"sol\"}}}}\n",
+  "opencode/opencode.json": "{\n  \"model\": \"praxis/gpt-6.1-sol\",\n  \"provider\": {\n    \"praxis\": {\n      \"models\": {\n        \"gpt-6.1-sol\": {\"cost\": {\"input\": 2, \"output\": 10, \"cache_read\": 0.1, \"cache_write\": 2}, \"limit\": {\"context\": 200000, \"input\": 200000, \"output\": 128000}, \"options\": {\"include\": [\"reasoning.encrypted_content\"]}},\n        \"gpt-6-astra\": {\"cost\": {\"input\": 10, \"output\": 50, \"cache_read\": 1, \"cache_write\": 10}, \"limit\": {\"context\": 200000, \"input\": 200000, \"output\": 128000}, \"options\": {\"include\": [\"reasoning.encrypted_content\"]}},\n        \"gpt-6-luna\": {\"cost\": {\"input\": 0.1, \"output\": 0.5, \"cache_read\": 0.01, \"cache_write\": 0.1}, \"limit\": {\"context\": 200000, \"input\": 200000, \"output\": 65536}}\n      }\n    }\n  }\n}\n",
+  "opencode/opencode-runner.json": "{\"agent\": {\"general\": {\"model\": \"praxis/gpt-6.1-sol\"}}}\n",
+  "roles/opencode/eval-tiered.json": "{\"agent\": {\"role-review\": {\"model\": \"praxis/gpt-6.1-sol\"}}}\n",
+  "tests/check_config.py": "MODELS = ('gpt-6.1-sol', 'gpt-6-astra', 'gpt-6-luna')\n"
+}
