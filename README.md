@@ -83,8 +83,19 @@ The ast-explore skill is copied from `cgwalters-bot/homegit`,
 `just discover-models` previews newer stable models in the families already
 declared by the praxis prompt tiers; `just discover-models --write` writes the
 bump, including role profile references and regression-test IDs. Preview is the
-default so inspecting releases cannot accidentally change routing. Set
-`BROKER_BASE_URL` (including `/v1`) and `BROKER_API_KEY` in the caller environment.
+default so inspecting releases cannot accidentally change routing. It shows
+affected IDs and old/new values; `--json` emits files, structured changes and
+diagnostics for automated callers. Set
+`BROKER_BASE_URL` (including `/v1`) and `BROKER_API_KEY` in the caller environment;
+without either, discovery reads `provider.praxis.options` `baseURL` and `apiKey`
+from the deployed `$XDG_CONFIG_HOME/opencode/opencode.json` (default
+`~/.config/opencode/`), where an agentic-job opencode run has replaced the
+placeholders with its proxy and run token. It fails naming what is missing.
+Both values must be strings, with an HTTP(S) URL and no `.invalid` host;
+unresolved opencode references such as `{env:...}` are not expanded by this
+command: set both broker variables instead. A deployed plain-HTTP `baseURL` is
+used only on a loopback address; for another plain-HTTP broker, which does not
+protect the token in transit, set both broker variables explicitly.
 Nothing schedules this by default. Discovery checks models.dev (opencode's
 catalog), OpenAI's Markdown model overview and per-model pages, and Anthropic's
 model overview. It never adds a tier, changes a fallback, or enables Terra.
@@ -96,19 +107,52 @@ invocation, each requesting 16 output tokens at low effort; a broker may ignore
 that token cap. Requests have a 60-second socket timeout and a 16 MiB response
 bound. The Linux CLI also has a ten-minute elapsed-time deadline so a slow stream
 cannot keep discovery running indefinitely. Authenticated redirects are refused
-so a broker login redirect cannot leak the run token. Discovery is intentionally
-separate from the network-free `just check`.
+so a broker login redirect cannot leak the run token. Broker requests using the
+deployed config connect directly rather than forwarding its token through an
+ambient proxy. Public source fetches and explicitly configured broker requests
+still honor proxy settings. Discovery is separate from the network-free `just check`.
 
 `tools/model-sources.json` records provider prices and limits for each bump,
-the URLs corroborating them, and configured caps. Existing local context/input
+the URLs corroborating them, and configured caps. A bump adds the new definition
+and keeps the replaced one, since callers outside this repository (tracker's
+`pools.json`, actions' `deployment.json`, `AGENT_MODEL` variables) may still
+name it; remove it by hand once they move. If a newer target is already defined
+(for example after a tier rollback), discovery leaves that tier unchanged and
+asks the operator to repoint it by hand, without overwriting its definition or
+blocking other tiers. Tier models with a record are also
+re-checked each run, and a changed published price or limit for the same ID
+updates the record and the configured price (caps only ever shrink). Luna has
+no record yet, so it is not re-checked. Existing local context/input
 and output caps are retained, not automatically expanded. Cache creation keeps
 the input rate because the broker meters it as plain input; published provider
 cache-write rates are recorded separately. OpenAI numeric facts must agree with
-models.dev or discovery fails without writing. Claude families are supported
+models.dev before an update. A verified successor does not require the retired
+model's page. An unverifiable same-ID check leaves that model unchanged and
+reports a diagnostic without suppressing independent bumps. Claude families are supported
 only if already declared; their numeric facts come from models.dev, with model
 IDs checked against Anthropic's overview. No Claude pool is declared today.
-Unparseable sources, missing credentials or ambiguous metadata fail the job;
-they are not treated as a successful no-change check.
+Unparseable source bundles, missing credentials or ambiguous successor metadata
+fail the job; they are not treated as a successful no-change check. Missing
+evidence history starts empty, but malformed evidence remains an error.
+
+#### Caller credential-fallback preview
+
+The actual agentic-job fix caller for this pull request ran the following at
+reviewed head `3ceeeebe840ab69e13bc0931bc23b7ecee16c26b`, not with fixtures.
+The deployed config was
+`/home/runner/work/_temp/agent-home/.config/opencode/opencode.json`, provider
+`praxis`, with an HTTP proxy URL ending in `/v1` and a populated `apiKey`.
+The proxy hostname and token are omitted. No endpoint was copied into code.
+
+```text
+$ env -u BROKER_BASE_URL -u BROKER_API_KEY timeout 90s just discover-models
+python3 -B tools/discover_models.py
+No model changes.
+$ git status --short
+(no output)
+```
+
+The preview exited 0; no `--write` was used and the checkout remained clean.
 
 `just discover-models --fixtures tests/fixtures/model-discovery.json --write`
 replays the first bump offline. The fixture contains selected verbatim source
