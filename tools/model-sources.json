@@ -1,0 +1,48 @@
+{
+  "gpt-6.2-astra": {
+    "broker": "POST /responses: completed, matching model ID",
+    "cache_write_policy": "broker meters cache creation as plain input",
+    "configured_limit": {
+      "context": 200000,
+      "input": 200000,
+      "output": 128000
+    },
+    "cost": {
+      "cache_read": 0.4,
+      "cache_write": 10,
+      "input": 8,
+      "output": 40
+    },
+    "cross_check": "https://models.dev/api.json",
+    "previous": "gpt-6-astra",
+    "provider_limit": {
+      "context": 1050000,
+      "input": 922000,
+      "output": 128000
+    },
+    "source": "https://developers.openai.com/api/docs/models/gpt-6.2-astra.md"
+  },
+  "gpt-6.2-sol": {
+    "broker": "POST /responses: completed, matching model ID",
+    "cache_write_policy": "broker meters cache creation as plain input",
+    "configured_limit": {
+      "context": 200000,
+      "input": 200000,
+      "output": 128000
+    },
+    "cost": {
+      "cache_read": 0.1,
+      "cache_write": 2.5,
+      "input": 2,
+      "output": 10
+    },
+    "cross_check": "https://models.dev/api.json",
+    "previous": "gpt-6.1-sol",
+    "provider_limit": {
+      "context": 1050000,
+      "input": 922000,
+      "output": 128000
+    },
+    "source": "https://developers.openai.com/api/docs/models/gpt-6.2-sol.md"
+  }
+}

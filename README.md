@@ -33,7 +33,7 @@ and provisioning. ast-outline 1.9.0 uses `uv tool install --no-build`, the full
 No sdist build runs; uv ignores hashes in constraints, so wheels remain trusted
 as PyPI served them before that cutoff. This is not a package sandbox.
 
-`just check` runs only `just check-config`. CI separately provisions tools and
+`just check` runs `just check-config` and offline model discovery tests. CI separately provisions tools and
 checks their exact versions and structural navigation. No generic installer or
 manifest interface remains. Do not restore agentic-job's rejected `[setup.tools]`
 mechanism. External caller package settings still need their agenthome-only Rust
@@ -77,6 +77,45 @@ The ast-explore skill is copied from `cgwalters-bot/homegit`,
 `c027d9f4c28c8e21df37f82e978b3fc55fe73cab`.
 
 ## opencode configuration
+
+### Model discovery
+
+`just discover-models` previews newer stable models in the families already
+declared by the praxis prompt tiers; `just discover-models --write` writes the
+bump, including role profile references and regression-test IDs. Preview is the
+default so inspecting releases cannot accidentally change routing. Set
+`BROKER_BASE_URL` (including `/v1`) and `BROKER_API_KEY` in the caller environment.
+Nothing schedules this by default. Discovery checks models.dev (opencode's
+catalog), OpenAI's Markdown model overview and per-model pages, and Anthropic's
+model overview. It never adds a tier, changes a fallback, or enables Terra.
+
+Public releases are not evidence of broker availability: only IDs from the
+broker's `/models`, or completed Responses probes with matching model IDs when
+that route returns 404/405, are eligible. There are at most eight probes per
+invocation, each requesting 16 output tokens at low effort; a broker may ignore
+that token cap. Requests have a 60-second socket timeout and a 16 MiB response
+bound. The Linux CLI also has a ten-minute elapsed-time deadline so a slow stream
+cannot keep discovery running indefinitely. Authenticated redirects are refused
+so a broker login redirect cannot leak the run token. Discovery is intentionally
+separate from the network-free `just check`.
+
+`tools/model-sources.json` records provider prices and limits for each bump,
+the URLs corroborating them, and configured caps. Existing local context/input
+and output caps are retained, not automatically expanded. Cache creation keeps
+the input rate because the broker meters it as plain input; published provider
+cache-write rates are recorded separately. OpenAI numeric facts must agree with
+models.dev or discovery fails without writing. Claude families are supported
+only if already declared; their numeric facts come from models.dev, with model
+IDs checked against Anthropic's overview. No Claude pool is declared today.
+Unparseable sources, missing credentials or ambiguous metadata fail the job;
+they are not treated as a successful no-change check.
+
+`just discover-models --fixtures tests/fixtures/model-discovery.json --write`
+replays the first bump offline. The fixture contains selected verbatim source
+excerpts and catalog fields recorded on 2026-11-17, plus sanitized successful
+broker probe outcomes; it contains no endpoint, token or response IDs. Replaying
+against the bumped tree is a no-op. The weekly workflow must be installed by the
+controller from the accompanying PR description; it is not enabled here.
 
 `opencode/` holds `opencode.json` (the one provider and its models) and
 `opencode-runner.json` (the unattended-run profile merged over it) for

@@ -512,8 +512,8 @@ class ConfigurationTests(unittest.TestCase):
             ("permission must be", "agent.role-worker.permission.task", "allow"),
             ("permission must be", "agent.role-plan.permission.edit", "allow"),
             ("mode must be primary", f"agent.{LEAD}.mode", "subagent"),
-            ("model must be praxis/gpt-6-luna, the luna tier's", "agent.role-worker.model", "praxis/gpt-6-astra"),
-            ("model must be praxis/gpt-6.1-sol, the sol tier's", "agent.role-review.model", "praxis/gpt-6-luna"),
+            ("model must be praxis/gpt-6-luna, the luna tier's", "agent.role-worker.model", "praxis/gpt-6.2-astra"),
+            ("model must be praxis/gpt-6.2-sol, the sol tier's", "agent.role-review.model", "praxis/gpt-6-luna"),
         ]:
             edits.append((message, lambda c, p=path, v=value: edit_profile(c, p, v)))
         self.assertEqual(len(edits), 32)
@@ -580,7 +580,7 @@ class ConfigurationTests(unittest.TestCase):
 
     def test_reasoning_models_request_encrypted_reasoning_for_stateless_turns(self):
         models = load()["catalogue"]["provider"][POOL]["models"]
-        for name in ("gpt-6.1-sol", "gpt-6-astra", "gpt-6-luna"):
+        for name in ("gpt-6.2-sol", "gpt-6.2-astra", "gpt-6-luna"):
             self.assertEqual(models[name]["options"]["include"], ["reasoning.encrypted_content"], name)
 
     def test_every_model_carries_its_list_price_so_opencode_reports_cost(self):
@@ -625,7 +625,7 @@ class ConfigurationTests(unittest.TestCase):
         c = load()
         for index, (path, value) in enumerate([
             ("enabled_providers", [POOL, "local"]), ("enabled_providers", [POOL]),
-            ("agent.title", {}), ("agent.compaction", {"model": "praxis/gpt-6.1-sol"}),
+            ("agent.title", {}), ("agent.compaction", {"model": "praxis/gpt-6.2-sol"}),
             ("agent.plan", {"disable": True}), ("agent.title", "x"),
             ("small_model", "praxis/gpt-6-luna"), ("model", "local/undefined-model"),
             ("agent.extra", {"model": "praxis/gpt-6-luna"}),

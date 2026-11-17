@@ -5,4 +5,13 @@ default:
 check-config:
     python3 tests/check_config.py
 
-check: check-config
+# Offline discovery regression tests, including recorded provider/broker fixtures.
+check-models:
+    python3 -B -m unittest discover -s tests -p 'test_models.py'
+
+# Opt-in network discovery; BROKER_BASE_URL (including /v1) and BROKER_API_KEY required.
+# May send up to eight minimal inference probes when /models is unavailable.
+discover-models *args:
+    python3 -B tools/discover_models.py {{args}}
+
+check: check-config check-models

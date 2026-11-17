@@ -1,8 +1,8 @@
 {
   "pools": {
     "praxis": {
-      "astra": { "model": "praxis/gpt-6-astra", "fallback": "sol" },
-      "sol": { "model": "praxis/gpt-6.1-sol", "fallback": "luna" },
+      "astra": { "model": "praxis/gpt-6.2-astra", "fallback": "sol" },
+      "sol": { "model": "praxis/gpt-6.2-sol", "fallback": "luna" },
       "terra": { "model": null, "fallback": "sol" },
       "luna": { "model": "praxis/gpt-6-luna", "fallback": null }
     }
