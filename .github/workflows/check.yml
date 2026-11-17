@@ -4,8 +4,6 @@ permissions:
   contents: read
 jobs:
   check:
-    # The runner image's stable Rust toolchain, with rustfmt and clippy;
-    # Cargo.toml's rust-version says what the code needs.
     runs-on: ubuntu-26.04
     timeout-minutes: 15
     env:
@@ -47,5 +45,5 @@ jobs:
           outline_version=$(ast-outline --version)
           test "${outline_version%%$'\n'*}" = 'ast-outline 1.9.0'
           test "$(cgwalters-forge-misctool --version)" = 'cgwalters-forge-misctool 0.1.0'
-          ast-outline src/main.rs
-          ast-grep run --pattern 'fn main() -> $RET { $$$ }' --lang rust src/main.rs
+          ast-outline tests/check_config.py
+          ast-grep run --pattern 'def require($$$): $$$' --lang python tests/check_config.py

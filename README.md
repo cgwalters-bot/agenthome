@@ -12,13 +12,10 @@ Python 3.9 or later to lint the configuration and run its positive and negative
 fixtures. This uses only the standard library, without Cargo, downloads, package
 installation or network schema fetching.
 
-The offline eval command still uses the Rust crate, `agenthome`
-(`cargo run -- --help` lists its subcommands). The recipes build it from this
-checkout with Cargo. Building it requires Rust
-1.85 or later; the first run fetches the locked crates from crates.io. The
-binary reads its inputs from the checkout it was built from: it is not a
-relocatable release artifact. No JavaScript is left, and `just check` fails
-if a `.js`, `.mjs` or `.cjs` file comes back.
+This repository has no compiled application or Rust toolchain requirement.
+Offline eval summarization is provided by `agent-board eval summarize MANIFEST RUNS`;
+see [agent-board's eval documentation](https://github.com/cgwalters-forge/agent-board/blob/main/docs/eval.md).
+No JavaScript is left, and `just check` fails if a `.js`, `.mjs` or `.cjs` file comes back.
 
 ## Navigation tools
 
@@ -36,12 +33,11 @@ and provisioning. ast-outline 1.9.0 uses `uv tool install --no-build`, the full
 No sdist build runs; uv ignores hashes in constraints, so wheels remain trusted
 as PyPI served them before that cutoff. This is not a package sandbox.
 
-`just check` runs `just check-config`, `cargo fmt --check`, clippy with warnings
-denied and the offline eval/serializer tests. CI separately provisions tools and
+`just check` runs only `just check-config`. CI separately provisions tools and
 checks their exact versions and structural navigation. No generic installer or
 manifest interface remains. Do not restore agentic-job's rejected `[setup.tools]`
-mechanism. Eval relocation and final Cargo/tracker package removal remain later
-slices of agenthome#76; this does not complete that issue.
+mechanism. External caller package settings still need their agenthome-only Rust
+requirements removed; this repository no longer builds or tests a Rust crate.
 
 ### Installer caller audit (2026-11-14)
 
@@ -58,7 +54,7 @@ Tracker at `595cc08ed43c4c5245059ffe11265172b9a0d7f7` has only commented
 `9b43eb81e1266ec762a6c49a4e31fb6b4ff3e0e0` is a historical pin, not evidence
 of a current deployment. Agentic-job at
 `df6134e1009b8774c264de440028a4e324e43711` refuses `setup.tools`
-(`crates/agentic-job/src/config/mod.rs:309–313`); its
+(in its configuration parser); its
 `docs/dispatch.md:376–393` discusses the former interface, not an active call.
 Agent-board at `157fff2c117c6ea1ea59af2b8517963baa806d43` has no active
 agenthome installer reference. Their workflows' Cargo invocations build their
@@ -182,8 +178,8 @@ null, 2)`).
 The standalone tests retain the invariant test names from the former Rust
 configuration suites. Their mutation groups cover all 32 role/tier fixtures,
 9 provider and 3 runner fixtures, and 25 standing-rule fixtures, in their original
-order. The two shared JSON.stringify number/key tests remain in `tests/json.rs`
-with the Rust eval serializer; neither that serializer nor the eval digest changed.
+order. Eval serialization tests now belong to agent-board; the eval digest format
+is unchanged.
 
 The prefix keeps the roles from replacing opencode's built-in `plan` and
 `explore`, Claude Code's own subagents, or agentic-job's embedded
@@ -210,9 +206,12 @@ on capacity, enforcement and execution evidence.
 ## Offline role evaluation
 
 `eval/README.md` defines the opt-in three-arm historical evaluation protocol and
-the input format of the offline `summarize-eval` subcommand. The sample still needs
+the input format of `agent-board eval summarize MANIFEST RUNS`, documented in
+[agent-board](https://github.com/cgwalters-forge/agent-board/blob/main/docs/eval.md).
+The sample still needs
 authorized sizing evidence and a runner that installs the role agents. No research runs or
-workflow changes are enabled. Its synthetic fixture tests run in `just check`.
+workflow changes are enabled. `eval/summary.json` remains the recorded pending
+output; synthetic eval tests run in agent-board, not `just check` here.
 
 ## Tracker supervisor profile
 
