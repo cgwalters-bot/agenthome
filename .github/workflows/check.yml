@@ -1,5 +1,9 @@
 name: Check
-on: [push, pull_request]
+on:
+  pull_request:
+  merge_group: {types: [checks_requested]}
+  push:
+    branches: [main]
 permissions:
   contents: read
 jobs:
@@ -47,3 +51,15 @@ jobs:
           test "$(cgwalters-forge-misctool --version)" = 'cgwalters-forge-misctool 0.1.0'
           ast-outline tests/check_config.py
           ast-grep run --pattern 'def require($$$): $$$' --lang python tests/check_config.py
+
+  # Require only ci in the ruleset, on both PR and merge-group commits.
+  ci:
+    if: ${{ always() }}
+    needs: [check]
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: jq -e 'all(.[]; .result == "success")' <<< "$RESULTS"
