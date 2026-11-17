@@ -9,7 +9,7 @@ check-config:
 check-models:
     python3 -B -m unittest discover -s tests -p 'test_models.py'
 
-# Opt-in network discovery; BROKER_BASE_URL (including /v1) and BROKER_API_KEY required.
+# Opt-in discovery using a broker pair from the environment or deployed home config.
 # May send up to eight minimal inference probes when /models is unavailable.
 discover-models *args:
     python3 -B tools/discover_models.py {{args}}

@@ -83,8 +83,12 @@ The ast-explore skill is copied from `cgwalters-bot/homegit`,
 `just discover-models` previews newer stable models in the families already
 declared by the praxis prompt tiers; `just discover-models --write` writes the
 bump, including role profile references and regression-test IDs. Preview is the
-default so inspecting releases cannot accidentally change routing. Set
-`BROKER_BASE_URL` (including `/v1`) and `BROKER_API_KEY` in the caller environment.
+default so inspecting releases cannot accidentally change routing.
+Set `BROKER_BASE_URL` (including the broker's API prefix) and `BROKER_API_KEY` together in the
+caller environment, or leave both unset in a hosted run to use the pair the
+launcher deployed under `provider.praxis.options` in `~/.config/opencode/opencode.json`.
+Discovery does not merge settings from project configuration or resolve opencode
+substitutions; values must already be populated by the caller.
 Nothing schedules this by default. Discovery checks models.dev (opencode's
 catalog), OpenAI's Markdown model overview and per-model pages, and Anthropic's
 model overview. It never adds a tier, changes a fallback, or enables Terra.
@@ -95,14 +99,26 @@ that route returns 404/405, are eligible. There are at most eight probes per
 invocation, each requesting 16 output tokens at low effort; a broker may ignore
 that token cap. Requests have a 60-second socket timeout and a 16 MiB response
 bound. The Linux CLI also has a ten-minute elapsed-time deadline so a slow stream
-cannot keep discovery running indefinitely. Authenticated redirects are refused
-so a broker login redirect cannot leak the run token. Discovery is intentionally
-separate from the network-free `just check`.
+cannot keep discovery running indefinitely. Authenticated requests refuse
+redirects. Deployed broker settings bypass proxies; explicit broker settings
+honor the caller's proxy configuration.
+Discovery is separate from the network-free `just check`.
 
 `tools/model-sources.json` records provider prices and limits for each bump,
-the URLs corroborating them, and configured caps. Existing local context/input
-and output caps are retained, not automatically expanded. Cache creation keeps
-the input rate because the broker meters it as plain input; published provider
+the URLs corroborating them, and configured caps. Prices and limits of
+models already defined are not refreshed. A bump adds the new definition and keeps the replaced one, since callers outside this repository (tracker's
+`pools.json`, actions' `deployment.json`, `AGENT_MODEL` variables) may still
+name it; remove it by hand once they move. If a newer target is already defined
+(for example after a tier rollback), discovery leaves that tier unchanged and
+asks the operator to repoint it by hand rather than overwrite the definition.
+Without a broker listing, discovery does not probe an already-defined target or
+try older candidates for that tier. Verify that target's availability before
+repointing the tier by hand.
+Discovery fails without writing if two distinct old IDs would add the same new
+definition, or if adding it would overwrite the evidence for a removed model.
+Archive that evidence before regenerating the definition. Existing local
+context/input and output caps are retained, not automatically expanded. Cache
+creation keeps the input rate because the broker meters it as plain input; published provider
 cache-write rates are recorded separately. OpenAI numeric facts must agree with
 models.dev or discovery fails without writing. Claude families are supported
 only if already declared; their numeric facts come from models.dev, with model
