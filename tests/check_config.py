@@ -226,18 +226,21 @@ def check_roles(config, resolved):
 
 
 def check(config):
-    check_roles(config, check_tiers(config))
+    resolved = check_tiers(config)
+    check_roles(config, resolved)
+    return resolved
 
 
 def eval_bundle(config, arm):
-    """Render opt-in source profiles using the same validated resolver as lint.
+    """Render opt-in, skills-off source profiles using the validated tier resolver.
 
-    No provider, price, credential or permission scope is added. The complete
-    model map includes hidden helpers and the harness's embedded reviewer.
+    No provider, price, credential or permission scope is added. The model map
+    covers configured agents and all built-ins, including hidden helpers.
     """
     require(arm in ("single-strong", "single-cheap", "tiered"), "unknown eval arm")
-    check(config)
-    resolved = check_tiers(config)
+    resolved = check(config)
+    require(resolved["sol"] != resolved["luna"],
+            f"Evaluation requires distinct baselines: sol and luna both resolve to {resolved['sol']}")
     catalogue = copy.deepcopy(config["catalogue"])
     profile = copy.deepcopy(config["runner"])
     if arm == "tiered":
@@ -248,9 +251,10 @@ def eval_bundle(config, arm):
         model = resolved["sol" if arm == "single-strong" else "luna"]
         catalogue["model"] = catalogue["small_model"] = model
         profile["model"] = profile["small_model"] = model
-    # Explicitly cover opencode's implicit helpers and the embedded harness role.
+    # Inline entries define agents even when no matching agent file is installed.
+    # Route only configured agents and OpenCode built-ins, not skill-installed roles.
     names = set(catalogue.get("agent", {})) | set(profile["agent"]) | {
-        "build", "plan", "general", "explore", "compaction", "title", "summary", "diff-reviewer"}
+        "build", "plan", "general", "explore", "compaction", "title", "summary"}
     models = {}
     for name in sorted(names):
         base = catalogue.get("agent", {}).get(name, {})
@@ -293,8 +297,10 @@ class EvalBundleTests(unittest.TestCase):
                 self.assertEqual(bundle["opencode.json"]["provider"], config["catalogue"]["provider"])
                 self.assertEqual(profile["agent"]["general"]["permission"],
                                  config["runner"]["agent"]["general"]["permission"])
-                self.assertTrue({"summary", "compaction", "diff-reviewer", "build"} <=
+                self.assertTrue({"build", "plan", "general", "explore", "compaction", "title", "summary"} <=
                                 bundle["resolved-models.json"].keys())
+                self.assertNotIn("diff-reviewer", profile["agent"])
+                self.assertNotIn("diff-reviewer", bundle["resolved-models.json"])
                 if tier:
                     expected = check_tiers(config)[tier]
                     self.assertEqual(set(bundle["resolved-models.json"].values()), {expected})
@@ -314,6 +320,26 @@ class EvalBundleTests(unittest.TestCase):
             config["tiers"]["pools"][POOL]["luna"]["fallback"] = "luna"
             with self.assertRaises(ValueError):
                 eval_bundle(config, arm)
+
+    def test_bundles_reject_collapsed_baselines_without_restricting_normal_routing(self):
+        for use_fallback in (False, True):
+            config = load()
+            pool = config["tiers"]["pools"][POOL]
+            sol, luna = pool["sol"]["model"], pool["luna"]["model"]
+            pool["sol"]["model"] = None if use_fallback else luna
+            # Keep the normal routing and canonical roles aligned with the resolved tier.
+            config["profile"] = config["profile"].replace(sol, luna)
+            for source in (config["catalogue"], config["runner"]):
+                if source.get("model") == sol:
+                    source["model"] = luna
+                for agent in source["agent"].values():
+                    if agent.get("model") == sol:
+                        agent["model"] = luna
+            self.assertEqual(check(config)["sol"], luna)
+            for arm in ("single-strong", "single-cheap", "tiered"):
+                with self.subTest(arm=arm, use_fallback=use_fallback):
+                    with self.assertRaisesRegex(ValueError, "sol and luna both resolve"):
+                        eval_bundle(config, arm)
 
 
 def hostname(url):
@@ -856,7 +882,10 @@ if __name__ == "__main__":
         parser.add_argument("--eval-arm", choices=("single-strong", "single-cheap", "tiered"), required=True)
         parser.add_argument("--output", type=Path, required=True)
         args = parser.parse_args()
-        bundle = eval_bundle(load(), args.eval_arm)
+        try:
+            bundle = eval_bundle(load(), args.eval_arm)
+        except ValueError as error:
+            parser.error(str(error))
         # Refuse overwrite so normal source configuration cannot be replaced.
         args.output.mkdir(parents=False, exist_ok=False)
         for name, value in bundle.items():
