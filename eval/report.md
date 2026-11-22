@@ -54,13 +54,13 @@ after the historical fix. Keep checks and solutions outside agent context. Freez
 the same immutable requests, starts and check digests for all arms before comparison.
 
 The former Rust renderer was removed; the existing Python configuration checker
-now renders complete opt-in bundles through its shared tier resolver. Single-strong
-uses resolved sol throughout, single-cheap resolved luna throughout, and tiered
-adds the canonical inline role mapping. Tests cover helper/reviewer assignments,
-provider/permission preservation and unchanged defaults. Configured IDs are not
-proof of provider model versions. Exact observed model/version maps, common cost
-basis, environment/deployed harness pins remain absent. Archive those with digests
-before any cell runs.
+renders opt-in bundles for skills-off callers through its shared tier resolver.
+Single-strong uses resolved sol throughout, single-cheap resolved luna throughout,
+and tiered adds the canonical inline role mapping. Bundles reject identical
+resolved baselines and do not register agents installed by harness skills.
+Configured IDs are not proof of provider model versions. Observed model/version
+maps, common cost basis, and environment/deployed harness pins remain absent.
+Archive those with digests before any cell runs.
 
 Cache namespace isolation, identical bounded priming and aggregate enforcement
 remain unverified. Once all gates pass, predeclare a balanced rotated order for
@@ -73,10 +73,11 @@ the [protocol](README.md) or authorizes further spend.
 
 [manifest.json](manifest.json) deliberately remains pending with no tasks or
 configuration. [runs.json](runs.json) is the empty record array, not synthetic
-measurement data. [summary.json](summary.json) is exactly the output of:
+measurement data. [summary.json](summary.json) is the archived pending summary.
+To regenerate it with the current summarizer:
 
 ```text
-cargo run --locked -- summarize-eval eval/manifest.json eval/runs.json
+agent-board eval summarize eval/manifest.json eval/runs.json
 ```
 
 The output has status `pending`, no groups and no decisions. There are **0 of 54**
@@ -117,6 +118,36 @@ actual caller's config repository/ref/path, archived installed profile digest,
 opencode merge precedence (including ACP/main-model overrides), and observed
 role prompts/model versions. Rendering alone proves none of those runtime facts.
 
+**Local, no-inference config preview (2026-11-22):** OpenCode 1.18.35 loaded
+all three skills-off bundles generated from base `37bdd4bec333861aaf831e7abf2325b1e4b0cb9d`
+with generator blob `8a89367eb53e4e6ad33297b3932e261ee43348bb`. For each `ARM`, with a
+fresh directory `D`, the launcher supplied only `PATH` and the environment below:
+
+```sh
+python3 -B tests/check_config.py --eval-arm "$ARM" --output "$D/opencode"
+export HOME="$D" XDG_CONFIG_HOME="$D" OPENCODE_CONFIG="$D/opencode/opencode-runner.json"
+export OPENCODE_DISABLE_MODELS_FETCH=true OPENCODE_DISABLE_PROJECT_CONFIG=true
+opencode agent list --pure
+opencode debug config --pure
+```
+
+Both inspections exited 0 for each arm. In both baselines the registry was
+`build`, `compaction`, `explore`, `general`, `plan`, `summary`, `title`,
+defaulting to `build`. All agent and top-level model settings were
+`praxis/gpt-6.2-sol` for strong and `praxis/gpt-6-luna` for cheap. Tiered
+defaulted to `role-execute-lead`; its merged configuration showed:
+
+| Configured model | Registered agents |
+| --- | --- |
+| `praxis/gpt-6.2-sol` | `build`, `compaction`, `general`, `plan`, `role-execute-lead`, `role-plan`, `role-review`, `summary` |
+| `praxis/gpt-6-luna` | `explore`, `role-explore`, `role-worker`, `title` |
+
+Tiered's top-level `model` and `small_model` were sol and luna, respectively.
+`architect` and `fast` remained disabled in all arms, and `diff-reviewer` was
+absent. The merged model maps matched `resolved-models.json`; the five merged
+role prompts matched the tiered profile. This is a local caller load check, not
+evidence of hosted agentic-job installation, provider invocation, or enforcement.
+
 **Existing limits:** inspect the pinned
 [budget implementation](https://github.com/cgwalters-forge/agentic-job/blob/670e3c3e7def4c0fd456397b0f2034e764757184/crates/agentic-job/src/session/budget.rs)
 and [harness limits](https://github.com/cgwalters-forge/agentic-job/blob/670e3c3e7def4c0fd456397b0f2034e764757184/docs/harness.md#limits).
@@ -147,13 +178,14 @@ The [pool resolver](https://github.com/cgwalters-forge/agent-board/blob/20d1a3c7
 selects configured models/budgets; it is not a capacity API. None establishes an
 existing-pool allocation net of commitments or an evaluation reservation.
 
-The new `check-eval-readiness` command validates dated evidence envelopes and
-arithmetic offline, including sizing/probes/priming/all children and all 54 cells.
-Its checked-in input fails closed. A reviewer must retrieve/hash the originals,
-confirm allocation authority distinct from prices/targets, verify a real reservation
-against other commitments, and verify actual enforcement before filling it in.
-It cannot create the missing service or authorize a run. No broker/token scope,
-spending authority, top-up, or default routing is added.
+There is no readiness checker in agenthome. The
+[evidence contract](README.md#opt-in-offline-readiness-evidence) retains the
+seven-day window and capacity, reservation and plan bindings.
+A reviewer must retrieve and hash the originals, confirm allocation authority
+distinct from prices/targets, verify a real reservation against other commitments,
+and verify actual enforcement before filling in the evidence.
+The evidence document cannot replace the missing service or authorize a run.
+No broker/token scope, spending authority, top-up, or default routing is added.
 
 ## External prerequisite and concrete follow-up
 

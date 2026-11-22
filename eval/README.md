@@ -64,13 +64,16 @@ python3 tests/check_config.py --eval-arm tiered --output /tmp/tiered
 
 Each output directory must not already exist. These commands only write local
 artifacts: `opencode.json`, `opencode-runner.json`, `AGENTS.md`, and
-`resolved-models.json`. They never install or dispatch anything. Single-model
-arms retain the normal direct-worker prompt and permissions; every configured
-agent, hidden helper and embedded reviewer is explicitly assigned resolved sol
-or luna, respectively. Tiered adds the canonical five inline roles to the same
-base configuration. The provider catalogue and credential/address placeholders
-are unchanged. `resolved-models.json` records configuration resolution, **not**
-observed provider versions or proof of execution. Archive those separately.
+`resolved-models.json`. They never install or dispatch anything. These bundles
+are for skills-off callers only. Single-model arms retain the normal direct-worker
+prompt and permissions; every configured agent and built-in helper is explicitly
+assigned resolved sol or luna, respectively. Agents installed by harness skills
+are not added as inline entries. Tiered adds the canonical five inline roles to
+the same base configuration. If sol and luna resolve to the same model, the
+generator refuses all arms rather than staging a same-model baseline comparison.
+The provider catalogue and credential/address placeholders are unchanged.
+`resolved-models.json` records configuration resolution, **not** observed provider
+versions or proof of execution. Archive those separately.
 Use a fresh runner session when testing bundles; configuration is loaded at startup.
 
 A frozen `configuration` contains `configRevision`, `harnessRevision` (full
