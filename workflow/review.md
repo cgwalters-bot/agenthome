@@ -87,14 +87,29 @@ its one-sentence claim, even when its detail is inline: the automated fixer
 reads only the verdict.
 Report every finding you can see in this one pass, not only the first.
 Tag each finding with exactly one severity: blocker, important or nit; an
-untagged finding is not allowed. A blocker makes the change wrong for its
-main purpose, loses data, or opens a security hole with a concrete path you
-can state, such as what a weakened permission, gate, bound, pin, token
-placement or trigger now lets someone do. Anything less is important or a nit.
+untagged finding is not allowed. A blocker is a concrete failure to deliver
+the change's main purpose, including when a fix leaves the bug it targets in
+place. Even when the change delivers its main purpose, block on a concrete
+defect it introduces or makes reachable: a material regression in existing
+behavior, data loss, a security hole, or a confirmed dependency-integrity
+failure. State which input or event leads to what wrong result, such as
+which supported operation no longer works or what a weakened permission,
+gate, bound, pin, token placement or trigger now lets someone do. For a
+dependency-integrity failure, identify what changed, such as an unintended
+or unpinned package or an unintended install script the change pulls in.
+Speculative risks, unrelated pre-existing behavior the change does not make
+reachable, missing hardening the change does not remove, and incidental
+documentation or test gaps are important or nits with a suggested follow-up.
+An omission that defeats the main purpose of a documentation or test change
+is not incidental. When findings share a cause, report one finding at the
+highest severity among them that names the root fix (such as the mechanism
+to replace or delete), with its instances under it, not one finding per
+instance.
 The comment's first line starts with VERDICT: CHANGES only when there is at
-least one blocker, and VERDICT: APPROVE otherwise, and may go on with a short
-reason. Keep that line to the one verdict: a first line that also names the
-other verdict (or REJECT next to APPROVE) is refused and the comment is lost.
+least one blocker, and VERDICT: APPROVE otherwise, also when important
+findings and nits remain, and may go on with a short reason. Keep that line
+to the one verdict: a first line that also names the other verdict (or
+REJECT next to APPROVE) is refused and the comment is lost.
 Then come the findings, most important first. In an approving review, list
 important findings and nits under a "Follow-ups" heading, each with its file
 and line, for later pull requests. When there is a blocker, the fix may take
