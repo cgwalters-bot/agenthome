@@ -5,11 +5,13 @@ description: How to write short commit messages and pull request descriptions (w
 
 # commit-messages
 
+Rules for commit messages, layered on the `text-writing` skill; load it first for attribution, concision and avoiding duplication.
+
 ## Commit messages
 
 Unless a project's contributing docs (look for CONTRIBUTING.md or an equivalent) say otherwise, use Linux kernel style: a subject such as `install: Explicitly label .ostree.cfs`, in the imperative mood ("Add", not "Adds"), under about 70 characters.
 
-The body says **why**, plus only the essentials of what: the motivation, the problem, the one non-obvious consequence a reviewer needs ("Note the manifest becomes part of the GC root"). Most bodies are one to three short paragraphs; many are a single sentence. A "prep" commit can be just "Prep for handling X later." A trivial change can have no body at all.
+The body is primarily **why**, in a few sentences; the reader sees the what in the diff. Add only the essentials of what: the motivation, the problem, the one non-obvious consequence a reviewer needs ("Note the manifest becomes part of the GC root"). Most bodies are one to three short paragraphs; many are a single sentence. A "prep" commit can be just "Prep for handling X later." A trivial change can have no body at all.
 
 How the code works does not go in the commit message. The message is read once, at review; the explanation is needed every time someone reads the code. Put the design, the data flow and the invariants in the project's docs or in module and item docs (`//!` and `///` in Rust), next to the code, and change those with the code. If the body starts walking through the implementation, move that text into docs and leave the message the reason.
 
@@ -36,6 +38,8 @@ This was an oversight, unfortunately having two different
 programming languages here led to less code sharing.
 ```
 
+Never paste the pull request description into a commit. A commit has no Executive summary or other headings, run or CI links, verification transcripts or review notes.
+
 Avoid:
 - restating the diff ("Changed function X to call Y instead of Z");
 - `Changes:` or "What changed" sections, file-by-file lists, and bullet lists of implementation details; a short "While we're here:" list of unrelated small fixes is fine;
@@ -47,7 +51,7 @@ Never add a `Signed-off-by` trailer, and never remove one a commit already has.
 
 ## Pull request descriptions
 
-Every issue and PR body opens with a short Executive summary section (the ask or change, a few sentences). An optional More detail section follows, at most a few paragraphs. Most detail belongs in the code, its comments and commit messages, not the body. Leave out restated context, verification logs and hedges. A single-commit PR's description can repeat the commit body or say less; a series states the goal, not a summary of each commit. Where the task asks for verification, review or unfinished work, give each one line, not a transcript.
+Pull request descriptions follow the `upstream-text` skill. The description may be longer than the commit, but the commit never grows to match it. A single-commit PR's description can repeat the commit body or say less; a series states the goal, not a summary of each commit. Where the task asks for verification, review or unfinished work, give each one line, not a transcript.
 
 ## Fixes and review feedback
 

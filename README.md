@@ -158,7 +158,10 @@ from agenthome#6 (`opencode/AGENTS.md`, which became the rules and the
 `commit-messages`, `upstream-text` and `subagent-review` skills) and from
 homegit's `dotfiles/.agents/skills/commit-review/SKILL.md` at the commit above.
 They don't name an operator or bot login or a homegit tool. `just check`
-enforces this. agenthome#8 is closed without deciding how a run learns the
+enforces this. The `text-writing` skill and the why-first commit body rules
+merge homegit PR 2's `dotfiles/.config/opencode/skills/text-writing` and
+`commit-writing` skills at `18952f1e433f651fbb0dc5abfd47a2c82b0b0af7`, keeping
+agenthome's `Generated-by` trailer instead of their `Assisted-by` one. agenthome#8 is closed without deciding how a run learns the
 operator and bot logins, so the skills that need the operator
 (`commit-messages`, `upstream-text`, `commit-review`) cannot know it yet. There is no
 issue for that follow-up yet.
