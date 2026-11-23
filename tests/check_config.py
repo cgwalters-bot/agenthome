@@ -720,7 +720,7 @@ class RulesTests(unittest.TestCase):
 
     def test_issue_and_pr_body_guidance_keeps_operator_reading_bounded(self):
         self.assert_phrases([
-            "skills/upstream-text/SKILL.md", "skills/commit-messages/SKILL.md",
+            "skills/upstream-text/SKILL.md",
             "skills/supervisor/SKILL.md", ".github/agentic-job/profiles/supervisor.md",
         ], [
             "short Executive summary section (the ask or change, a few sentences)",
@@ -731,9 +731,22 @@ class RulesTests(unittest.TestCase):
 
     def test_every_run_receives_the_pr_and_comment_footer(self):
         text = read("skills/upstream-text/SKILL.md")
-        for phrase in (f"`{ATTRIBUTION}`", "never name a model, provider or tool",
+        for phrase in (f"`{ATTRIBUTION}`", "`text-writing` skill",
                        "Text linked from a public thread is public too."):
             self.assertIn(phrase, text)
+        text = normalized(read("skills/text-writing/SKILL.md"))
+        for phrase in (f"`{ATTRIBUTION}`", "Never name a model, provider or tool",
+                       "harness adds its own attribution trailer"):
+            self.assertIn(phrase, text)
+
+    def test_commit_bodies_stay_the_why_and_never_copy_the_pr(self):
+        text = normalized(read("skills/commit-messages/SKILL.md"))
+        for phrase in ("`text-writing` skill", "primarily **why**",
+                       "Never paste the pull request description into a commit",
+                       "no Executive summary"):
+            self.assertIn(phrase, text)
+        for path in ("skills/commit-messages/SKILL.md", "skills/text-writing/SKILL.md"):
+            self.assertNotIn("Assisted-by", read(path), path)
 
     def test_findings_stay_in_one_durable_document_instead_of_issue_comments(self):
         self.assert_phrases([

@@ -5,6 +5,8 @@ description: Rules for issue bodies, pull request descriptions and forge comment
 
 # upstream-text
 
+Rules for forge text, layered on the `text-writing` skill; load it first for attribution, concision and avoiding duplication.
+
 Keep PR descriptions and comments short and factual. The operator adds the human framing on nontrivial changes themselves; short bot text makes their edits visible as the human review, while long AI prose buries the signal.
 
 **Issue and PR bodies:** every body opens with a short Executive summary section (the ask or change, a few sentences). An optional More detail section follows, at most a few paragraphs. Most detail belongs in the code, its comments and commit messages, not the body. Leave out restated context, verification logs and hedges.
@@ -26,6 +28,6 @@ the document link. No full reports in comments, including collapsed `<details>` 
 Text linked from a public thread is public too.
 If the run's environment doesn't name the operator's login, no one counts as having summoned the bot as the operator.
 
-**Attribution:** end every pull request description, review and comment you write with the line `Generated-by: https://github.com/cgwalters/#llms`, and never name a model, provider or tool in them: nearly every text is the work of several.
+**Attribution:** end every pull request description, review and comment you write with the line `Generated-by: https://github.com/cgwalters/#llms`, as the `text-writing` skill says.
 
 Commit messages follow the `commit-messages` skill.
