@@ -87,24 +87,32 @@ its one-sentence claim, even when its detail is inline: the automated fixer
 reads only the verdict.
 Report every finding you can see in this one pass, not only the first.
 Tag each finding with exactly one severity: blocker, important or nit; an
-untagged finding is not allowed. A blocker is a concrete failure to deliver
-the change's main purpose, including when a fix leaves the bug it targets in
-place. Even when the change delivers its main purpose, block on a concrete
-defect it introduces or makes reachable: a material regression in existing
-behavior, data loss, a security hole, or a confirmed dependency-integrity
-failure. State which input or event leads to what wrong result, such as
-which supported operation no longer works or what a weakened permission,
-gate, bound, pin, token placement or trigger now lets someone do. For a
-dependency-integrity failure, identify what changed, such as an unintended
-or unpinned package or an unintended install script the change pulls in.
-Speculative risks, unrelated pre-existing behavior the change does not make
-reachable, missing hardening the change does not remove, and incidental
-documentation or test gaps are important or nits with a suggested follow-up.
-An omission that defeats the main purpose of a documentation or test change
-is not incidental. When findings share a cause, report one finding at the
-highest severity among them that names the root fix (such as the mechanism
-to replace or delete), with its instances under it, not one finding per
-instance.
+untagged finding is not allowed. Apply these two blocker rules first:
+
+- Block on a concrete defect this diff introduces or makes reachable that
+  makes behavior worse than the base: a material regression in existing
+  behavior, data loss, a security hole, or a confirmed dependency-integrity
+  failure. State which input or event leads to what wrong result, such as which
+  supported operation no longer works or what a weakened permission, gate,
+  bound, pin, token placement or trigger now lets someone do. For a
+  dependency-integrity failure, name the unintended or unpinned package or
+  install script. An explicitly enabled default-off option is a reachable
+  input even if nothing in the PR enables it, and the faulty code need not
+  have changed if the diff makes it reachable.
+- Block when the change delivers none of its main stated purpose. Partial
+  delivery must make the intended behavior work in some of its target cases;
+  an incidental improvement or a standalone piece that enables no target case
+  does not count. For example, restoring only empty backups does not deliver a
+  fix for restoring files.
+
+Neither rule has a follow-up exception. If neither applies, remaining findings
+are important or nits: partial delivery, incidental PR text mismatches (suggest
+rewording), gaps in new opt-in behavior, findings in bumped dependencies,
+unchanged pre-existing gaps, speculative races and other speculative risks,
+hardening, privacy or robustness the base also lacks, and documentation or
+test gaps. When findings share a cause, report one finding at the highest
+severity among them that names the root fix (such as the mechanism to replace
+or delete), with its instances under it, not one finding per instance.
 The comment's first line starts with VERDICT: CHANGES only when there is at
 least one blocker, and VERDICT: APPROVE otherwise, also when important
 findings and nits remain, and may go on with a short reason. Keep that line
